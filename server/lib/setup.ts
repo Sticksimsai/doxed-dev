@@ -128,8 +128,10 @@ export async function setupChecks(): Promise<{ publicUrl: string; webhookUrl: st
       const keys = [k("PINATA_JWT", !!env.pinataJwt)];
       if (!env.pinataJwt) return { id: "ipfs", name: "Launches", purpose: "Token image + metadata storage", keys, status: "missing", detail: "All launches are off until this is set" };
       const [s, d] = await probe(async () => {
-        const r = await fetch("https://api.pinata.cloud/data/testAuthentication", { headers: { authorization: `Bearer ${env.pinataJwt}` }, ...timeout() });
-        if (!r.ok) throw new Error(r.status === 401 ? "Key rejected" : `HTTP ${r.status}`);
+        const r = await fetch("https://api.pinata.cloud/v3/files/public?limit=1", { headers: { authorization: `Bearer ${env.pinataJwt}` }, ...timeout() });
+        if (r.status === 401) throw new Error("Key rejected — copy the JWT, not the API key");
+        if (r.status === 403) throw new Error("Key needs Files: Read + Write (or Admin)");
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return "Connected";
       });
       return { id: "ipfs", name: "Launches", purpose: "Token image + metadata storage", keys, status: s, detail: d };
