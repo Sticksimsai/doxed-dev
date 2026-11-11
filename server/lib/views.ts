@@ -86,7 +86,8 @@ function toToken(r: Row, series: number[] | undefined, claims: Token["feeClaims"
       termMonths: Math.round((+new Date(r.lock_end) - +new Date(r.lock_start)) / (30.44 * 864e5)),
     },
     feeClaims: claims ?? [],
-    feesUnclaimedSol: null,
+    feesUnclaimedSol: num(r.fees_unclaimed_sol),
+    taxPct: r.tax_bps != null ? r.tax_bps / 100 : null,
     ai: r.tldr
       ? { tldr: r.tldr, points: r.points, recent: r.recent, watchouts: r.watchouts, sources: r.sources, updatedAt: new Date(r.ai_updated).toISOString() }
       : undefined,

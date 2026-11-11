@@ -68,8 +68,9 @@ export async function listLaunchpads(): Promise<Launchpad[]> {
   return LAUNCHPADS;
 }
 
+const LEGACY: Record<string, string> = { bonk: "LetsBonk", raydium: "Raydium LaunchLab", float: "Float" };
 export function launchpadById(id: string) {
-  return LAUNCHPADS.find((l) => l.id === id)!;
+  return LAUNCHPADS.find((l) => l.id === id) ?? { ...LAUNCHPADS[0], id: id as never, name: LEGACY[id] ?? id, available: false };
 }
 
 /** Synchronous lookup — filled by the list/detail calls above. */

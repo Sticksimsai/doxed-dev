@@ -91,7 +91,7 @@ export function DiscoverPage() {
               </span>
             </h1>
             <p className="font-prose mt-5 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
-              Launch on Pump.fun, Raydium, LetsBonk or Meteora. Devs prove who they are to us privately, and 100% of their
+              Launch on Pump.fun or Meteora. Devs prove who they are to us privately, and 100% of their
               tokens are locked for {LOCK_MIN_MONTHS}+ months. You get the proof. They keep their privacy.
             </p>
             <div className="mt-6 flex flex-wrap items-center gap-2">

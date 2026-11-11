@@ -26,9 +26,9 @@ export async function seedDemo() {
     }
     for (const t of TOKENS) {
       await tx`
-        insert into launches (mint, dev_id, launchpad, name, symbol, description, x_url, website_url, github_repo, stage, is_demo, created_at)
+        insert into launches (mint, dev_id, launchpad, name, symbol, description, x_url, website_url, github_repo, stage, is_demo, created_at, tax_bps)
         values (${t.mint}, ${idMap.get(t.devId)!}, ${t.launchpad}, ${t.name}, ${t.symbol}, ${t.description}, ${t.links.x ?? null},
-                ${t.links.website ?? null}, ${t.links.github?.replace("https://github.com/", "") ?? null}, ${t.stage}, true, ${t.createdAt})`;
+                ${t.links.website ?? null}, ${t.links.github?.replace("https://github.com/", "") ?? null}, ${t.stage}, true, ${t.createdAt}, ${t.taxPct ? t.taxPct * 100 : null})`;
       await tx`
         insert into locks (mint, contract, amount, pct_of_supply, starts_at, unlocks_at, verified_onchain_at)
         values (${t.mint}, ${t.lock.contract}, ${t.lock.amount}, ${t.lock.pctOfSupply}, ${t.lock.startsAt}, ${t.lock.unlocksAt}, now())`;

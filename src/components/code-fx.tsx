@@ -152,7 +152,7 @@ const EVENTS = [
   "DEV_DOXED     anon-K9m · private",
   "FEE_CLAIM     PAWS   2.34 SOL",
   "LAUNCH        SHIFT  pump.fun",
-  "GRADUATED     HRBR   → raydium amm",
+  "GRADUATED     HRBR   → meteora damm",
   "AI_SUMMARY    LGRL   refreshed",
   "REPO_SCAN     ORBIT  86/100",
   "DEV_DOXED     kitsune.dev · socials",

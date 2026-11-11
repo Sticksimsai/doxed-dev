@@ -20,12 +20,22 @@ import { confirmLock, startJobs } from "./jobs";
 import { seedDemo } from "./seed";
 import { LAUNCHPADS } from "../src/lib/mock";
 import { bootstrapIntegrations, clearDemo, setupChecks } from "./lib/setup";
+import { PRESET, buildPresetConfigTx, presetTiers, savePresetConfig } from "./lib/meteora";
 import { aiReady } from "./lib/ai";
 
 type Vars = { Variables: { wallet: string; devId: string } };
 const app = new Hono<Vars>();
 const api = new Hono<Vars>();
 
+// Once a custom domain is set (PUBLIC_URL), send page visits on the default host there. API calls are left alone.
+app.use("*", async (c, next) => {
+  const host = c.req.header("x-forwarded-host") ?? c.req.header("host") ?? "";
+  if (process.env.PUBLIC_URL && host.endsWith(".onrender.com") && !c.req.path.startsWith("/api") && c.req.method === "GET") {
+    const target = new URL(env.publicUrl);
+    if (target.host !== host) return c.redirect(`${env.publicUrl}${c.req.path}${new URL(c.req.url).search}`, 301);
+  }
+  await next();
+});
 app.use("*", secureHeaders({ contentSecurityPolicy: undefined, crossOriginEmbedderPolicy: false, crossOriginOpenerPolicy: "same-origin-allow-popups" }));
 // The ID + face scan runs in an iframe from verify.didit.me and needs camera access.
 app.use("*", async (c, next) => {
@@ -146,6 +156,32 @@ api.post("/admin/demo/clear", requireWallet, requireAdmin, async (c) => {
   await clearDemo();
   return c.json({ ok: true });
 });
+/** Meteora preset configs — one per tax tier, created once from the admin's wallet. */
+api.get("/admin/meteora", requireWallet, requireAdmin, async (c) =>
+  c.json({ tiers: await presetTiers(), preset: PRESET, treasury: env.treasuryWallet || null }),
+);
+api.post("/admin/meteora/config-tx", requireWallet, requireAdmin, async (c) => {
+  const { taxBps } = (await c.req.json().catch(() => ({}))) as { taxBps?: number };
+  try {
+    return c.json(await buildPresetConfigTx(c.get("wallet"), Number(taxBps)));
+  } catch (e) {
+    return c.json({ error: (e as Error).message }, 400);
+  }
+});
+api.post("/admin/meteora/config", requireWallet, requireAdmin, async (c) => {
+  const { taxBps, config, signature } = (await c.req.json().catch(() => ({}))) as { taxBps?: number; config?: string; signature?: string };
+  if (!config || !taxBps) return c.json({ error: "Missing config" }, 400);
+  if (signature) {
+    const st = await signatureStatus(signature);
+    if (st.state !== "confirmed") return c.json({ error: st.state === "failed" ? `Transaction failed: ${st.error}` : "Not confirmed yet" }, 409);
+  }
+  try {
+    await savePresetConfig(Number(taxBps), config, c.get("wallet"));
+    return c.json({ ok: true });
+  } catch (e) {
+    return c.json({ error: (e as Error).message }, 400);
+  }
+});
 api.get("/admin/reviews", requireWallet, requireAdmin, async (c) => {
   const rows = await sql`
     select p.dev_id, p.alias, p.wallet, k.status, k.doc_type, k.country, k.signals, k.ai_review, k.session_id, k.updated_at
@@ -198,8 +234,16 @@ const requireDoxed = async (c: any, next: any) => {
   await next();
 };
 
-api.get("/launch/config", (c) =>
-  c.json({ inApp: IN_APP_LAUNCHPADS, pumpReady: !!env.pinataJwt, minDevBuySol: 0.01, minLockMonths: 12, launchFeeSol: env.treasuryWallet ? env.launchFeeSol : 0 }),
+api.get("/launch/config", async (c) =>
+  c.json({
+    inApp: IN_APP_LAUNCHPADS,
+    pumpReady: !!env.pinataJwt,
+    meteoraTaxes: await presetTiers().then((t) => t.map(({ taxBps, config }) => ({ taxBps, ready: !!config && !!env.pinataJwt }))),
+    meteoraPreset: { supply: PRESET.totalSupply, graduationMcapSol: PRESET.graduationMarketCapSol, creatorFeeShare: PRESET.creatorFeeShare },
+    minDevBuySol: 0.01,
+    minLockMonths: 12,
+    launchFeeSol: env.treasuryWallet ? env.launchFeeSol : 0,
+  }),
 );
 
 /** Step 1: image + details → IPFS metadata. */
@@ -232,7 +276,8 @@ api.post("/launch/metadata", limit(10, 60_000), requireWallet, requireDoxed, asy
 api.post("/launch/create-tx", limit(10, 60_000), requireWallet, requireDoxed, async (c) => {
   const b = z
     .object({
-      launchpad: z.enum(IN_APP_LAUNCHPADS, { message: "In-app launches support Pump.fun and LetsBonk for now." }),
+      launchpad: z.enum(IN_APP_LAUNCHPADS, { message: "Launches support Pump.fun and Meteora." }),
+      taxBps: z.number().int().min(25).max(1000).optional(),
       name: z.string().trim().min(2, "Name is too short.").max(32),
       symbol: z.string().trim().regex(/^[A-Za-z0-9]{2,10}$/, "Ticker must be 2–10 letters or numbers."),
       description: z.string().max(280).optional(),
@@ -247,13 +292,15 @@ api.post("/launch/create-tx", limit(10, 60_000), requireWallet, requireDoxed, as
     .safeParse(await c.req.json().catch(() => ({})));
   if (!b.success) return c.json({ error: b.error.issues[0].message }, 400);
   const d = b.data;
+  if (d.launchpad === "meteora" && !d.taxBps) return c.json({ error: "Pick a tax." }, 400);
   try {
-    const { mint, tx } = await buildCreateTx({ wallet: c.get("wallet"), launchpad: d.launchpad, name: d.name, symbol: d.symbol.toUpperCase(), uri: d.uri, devBuySol: d.devBuySol });
+    const { mint, tx, pool } = await buildCreateTx({ wallet: c.get("wallet"), launchpad: d.launchpad, name: d.name, symbol: d.symbol.toUpperCase(), uri: d.uri, devBuySol: d.devBuySol, taxBps: d.taxBps });
+    const tax = d.launchpad === "meteora" ? d.taxBps! : null;
     await sql`
       insert into launches (mint, dev_id, launchpad, name, symbol, description, image_url, metadata_uri, x_url, website_url, github_repo,
-                            dev_buy_sol, lock_months, stage)
+                            dev_buy_sol, lock_months, stage, pool_address, tax_bps)
       values (${mint}, ${c.get("devId")}, ${d.launchpad}, ${d.name}, ${d.symbol.toUpperCase()}, ${d.description ?? null}, ${d.image ?? null}, ${d.uri},
-              ${d.x || null}, ${d.website || null}, ${d.github || null}, ${d.devBuySol}, ${d.lockMonths}, 'draft')`;
+              ${d.x || null}, ${d.website || null}, ${d.github || null}, ${d.devBuySol}, ${d.lockMonths}, 'draft', ${pool ?? null}, ${tax})`;
     return c.json({ mint, tx });
   } catch (e) {
     return c.json({ error: (e as Error).message }, 502);
@@ -306,7 +353,7 @@ api.post("/launch/:mint/lock-tx", limit(10, 60_000), requireWallet, async (c) =>
 
 const LaunchBody = z.object({
   mint: wallet58,
-  launchpad: z.enum(["pumpfun", "raydium", "bonk", "meteora"]),
+  launchpad: z.enum(["pumpfun", "meteora"]),
   name: z.string().trim().min(2).max(32),
   symbol: z.string().trim().regex(/^[A-Za-z0-9]{2,10}$/),
   description: z.string().max(280).optional(),

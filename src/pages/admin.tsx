@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { http, USE_MOCK } from "@/lib/api";
 import { ago, cn, short } from "@/lib/format";
-import { useMe } from "@/lib/session";
+import { signAndSend, useMe, waitForConfirmation } from "@/lib/session";
 import { CheckCircle2, CircleAlert, Copy, RefreshCw, XCircle } from "@/components/icons";
 
 type Review = {
@@ -52,6 +52,7 @@ export function AdminPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-4">
       <SetupPanel />
+      <MeteoraPanel />
       <h1 className="pt-6 font-display text-3xl font-semibold">Verification review</h1>
       <p className="font-prose text-sm text-muted-foreground">
         Held and rejected verifications. Images stay with the verification provider — open the session in the verification console to see them.
@@ -186,6 +187,85 @@ function SetupPanel() {
           </div>
         ))}
       </div>
+    </section>
+  );
+}
+
+type Tier = { taxBps: number; config: string | null };
+
+function MeteoraPanel() {
+  const qc = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["admin-meteora"],
+    queryFn: () => http<{ tiers: Tier[]; preset: { totalSupply: number; initialMarketCapSol: number; graduationMarketCapSol: number; creatorFeeShare: number }; treasury: string | null }>("/admin/meteora"),
+  });
+  const [busy, setBusy] = useState<number | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function create(taxBps: number) {
+    setBusy(taxBps);
+    setMsg(null);
+    try {
+      const { tx, config } = await http<{ tx: string; config: string }>("/admin/meteora/config-tx", { method: "POST", json: { taxBps } });
+      const sig = await signAndSend(tx);
+      await waitForConfirmation(sig);
+      for (let i = 0; ; i++) {
+        try {
+          await http("/admin/meteora/config", { method: "POST", json: { taxBps, config, signature: sig } });
+          break;
+        } catch (e) {
+          if (i >= 4) throw e;
+          await new Promise((r) => setTimeout(r, 2500));
+        }
+      }
+      setMsg(`${taxBps / 100}% tier is live.`);
+      await qc.invalidateQueries({ queryKey: ["admin-meteora"] });
+      await qc.invalidateQueries({ queryKey: ["launch-config"] });
+    } catch (e) {
+      setMsg((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  if (!data) return null;
+  return (
+    <section className="space-y-3 pt-6">
+      <div>
+        <h2 className="font-display text-2xl font-semibold">Meteora presets</h2>
+        <p className="font-prose text-sm text-muted-foreground">
+          Every Meteora launch shares one preset — {data.preset.totalSupply.toLocaleString()} supply, {data.preset.initialMarketCapSol} → {data.preset.graduationMarketCapSol} SOL
+          market cap curve, LP locked forever, dev gets {data.preset.creatorFeeShare}% of the tax and the treasury the rest. Each tax option needs its config key created once
+          (your wallet pays ~0.01 SOL rent).
+        </p>
+      </div>
+      {!data.treasury && <p className="text-sm text-danger">Set TREASURY_WALLET first — it receives the platform share of the tax.</p>}
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {data.tiers.map((t) => (
+          <div key={t.taxBps} className="card flex items-center gap-3 p-4">
+            <div className="font-mono text-2xl">{t.taxBps / 100}%</div>
+            <div className="min-w-0 flex-1">
+              {t.config ? (
+                <>
+                  <div className="text-xs text-success">Live</div>
+                  <a href={`https://solscan.io/account/${t.config}`} target="_blank" rel="noreferrer" className="block truncate font-mono text-xs text-subtle hover:text-foreground">
+                    {short(t.config, 6, 6)}
+                  </a>
+                </>
+              ) : (
+                <div className="text-xs text-subtle">No config yet</div>
+              )}
+            </div>
+            {!t.config && (
+              <button className="btn-primary !px-3 !py-1.5 text-xs" disabled={busy !== null || !data.treasury} onClick={() => create(t.taxBps)}>
+                {busy === t.taxBps ? "Creating…" : "Create"}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      {msg && <p className="text-sm text-muted-foreground">{msg}</p>}
+      <p className="text-xs text-subtle">Change the offered options with METEORA_TAX_OPTIONS (e.g. "1,2,3,5"). Already have config keys? Set METEORA_CONFIGS="3:Key,5:Key".</p>
     </section>
   );
 }

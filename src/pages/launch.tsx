@@ -27,12 +27,28 @@ import { beginKyd, signAndSend, useKydStatus, useMe, useSignIn, waitForConfirmat
 import type { Disclosure, LaunchpadId } from "@/lib/types";
 
 const STEPS = ["Get doxed", "Launchpad", "Details", "Lock", "Launch"] as const;
-const IN_APP: LaunchpadId[] = ["pumpfun", "bonk"];
+const IN_APP: LaunchpadId[] = ["pumpfun", "meteora"];
+
+type LaunchConfig = {
+  pumpReady: boolean;
+  launchFeeSol: number;
+  meteoraTaxes: { taxBps: number; ready: boolean }[];
+  meteoraPreset?: { supply: number; graduationMcapSol: number; creatorFeeShare: number };
+};
+const MOCK_CFG: LaunchConfig = {
+  pumpReady: true,
+  launchFeeSol: 0.1,
+  meteoraTaxes: [100, 200, 300, 400, 500].map((taxBps) => ({ taxBps, ready: true })),
+  meteoraPreset: { supply: 1e9, graduationMcapSol: 400, creatorFeeShare: 80 },
+};
+const useLaunchConfig = () =>
+  useQuery({ queryKey: ["launch-config"], queryFn: () => (USE_MOCK ? Promise.resolve(MOCK_CFG) : http<LaunchConfig>("/launch/config")), staleTime: 60_000 });
 
 type Form = {
   alias: string;
   disclosure: Disclosure;
   launchpad?: LaunchpadId;
+  taxBps?: number;
   name: string;
   symbol: string;
   description: string;
@@ -77,6 +93,7 @@ export function LaunchPage() {
     const b: string[][] = [[], [], [], [], []];
     if (!doxed) b[0].push("Finish the ID + face scan to continue.");
     if (!f.launchpad) b[1].push("Pick a launchpad.");
+    if (f.launchpad === "meteora" && !f.taxBps) b[1].push("Pick your trading tax.");
     if (!f.image) b[2].push("Add a token image.");
     if (f.name.trim().length < 2) b[2].push("Add a token name.");
     if (!/^[A-Za-z0-9]{2,10}$/.test(f.symbol)) b[2].push("Ticker must be 2–10 letters or numbers.");
@@ -180,6 +197,7 @@ function Preview({ f, doxed }: { f: Form; doxed: boolean }) {
         </div>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {f.launchpad && <span className="chip border-border-strong text-muted-foreground">{LAUNCHPADS.find((l) => l.id === f.launchpad)?.name}</span>}
+          {f.launchpad === "meteora" && f.taxBps && <span className="chip border-border-strong text-muted-foreground">Tax {f.taxBps / 100}%</span>}
           {doxed && (
             <span className="chip border-foreground/40 bg-foreground/10 text-foreground">
               <ShieldCheck className="h-3 w-3" /> DOXED · {DISCLOSURE[f.disclosure].short}
@@ -402,9 +420,10 @@ function ScanModal({ url, onClose }: { url: string; onClose: () => void }) {
 
 // ------------------------------------------------------------------ step 2: launchpad
 function StepLaunchpad({ f, set }: StepProps) {
+  const { data: cfg } = useLaunchConfig();
   return (
     <div>
-      <StepTitle title="Where do you want to launch?" desc="Your token is created natively on the launchpad. Doxing and the lock work the same on all of them." />
+      <StepTitle title="Where do you want to launch?" desc="Your token is created natively on the launchpad. Doxing and the lock work the same on both." />
       <div className="grid gap-2 sm:grid-cols-2">
         {LAUNCHPADS.map((l) => {
           const ready = IN_APP.includes(l.id);
@@ -433,6 +452,53 @@ function StepLaunchpad({ f, set }: StepProps) {
           );
         })}
       </div>
+
+      {f.launchpad === "meteora" && (
+        <div className="mt-5 rounded-lg border border-border-strong p-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <div className="text-sm font-medium">Trading tax</div>
+            <div className="text-xs text-subtle">Charged on every buy and sell, in SOL</div>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
+            {(cfg?.meteoraTaxes ?? []).map((t) => {
+              const on = f.taxBps === t.taxBps;
+              return (
+                <button
+                  key={t.taxBps}
+                  disabled={!t.ready}
+                  aria-pressed={on}
+                  onClick={() => set("taxBps", t.taxBps)}
+                  className={cn(
+                    "rounded-md border py-2.5 text-center font-mono text-lg transition disabled:cursor-not-allowed disabled:opacity-40",
+                    on ? "border-foreground bg-foreground text-background" : "border-border hover:border-border-strong",
+                  )}
+                >
+                  {t.taxBps / 100}%
+                  {!t.ready && <span className="block font-pixel text-[8px] uppercase">soon</span>}
+                </button>
+              );
+            })}
+            {!cfg && <div className="col-span-full text-xs text-subtle">Loading options…</div>}
+          </div>
+          {cfg?.meteoraPreset && (
+            <div className="mt-4 grid gap-2 text-xs sm:grid-cols-3">
+              {[
+                [`${cfg.meteoraPreset.creatorFeeShare}%`, "of the tax goes to you"],
+                [`~${cfg.meteoraPreset.graduationMcapSol} SOL`, "market cap to graduate"],
+                ["Same tax", "after graduation, LP locked forever"],
+              ].map(([v, l]) => (
+                <div key={l} className="rounded-md border border-border bg-black/30 p-2">
+                  <div className="font-mono text-sm">{v}</div>
+                  <div className="text-subtle">{l}</div>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="font-prose mt-3 text-xs text-muted-foreground">
+            Everything else is a fixed preset — 1B supply, same curve for every launch — so holders know exactly what they're buying. Claimed tax shows up publicly in your fee history.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -591,10 +657,7 @@ const PHASES: Phase[] = [
 
 function StepLaunch({ f, goto }: { f: Form; goto: (n: number) => void }) {
   const lp = LAUNCHPADS.find((l) => l.id === f.launchpad);
-  const { data: cfg } = useQuery({
-    queryKey: ["launch-config"],
-    queryFn: () => (USE_MOCK ? Promise.resolve({ pumpReady: true, launchFeeSol: 0.1 }) : http<{ pumpReady: boolean; launchFeeSol: number }>("/launch/config")),
-  });
+  const { data: cfg } = useLaunchConfig();
   const [at, setAt] = useState(-1);
   const [log, setLog] = useState<string[]>([]);
   const [err, setErr] = useState<string | null>(null);
@@ -607,7 +670,9 @@ function StepLaunch({ f, goto }: { f: Form; goto: (n: number) => void }) {
   }, [log]);
   const say = (s: string) => setLog((l) => [...l, s]);
 
-  const blocked = f.launchpad === "pumpfun" && cfg && !cfg.pumpReady;
+  const blocked =
+    !!cfg &&
+    (f.launchpad === "pumpfun" ? !cfg.pumpReady : f.launchpad === "meteora" ? !cfg.meteoraTaxes.find((t) => t.taxBps === f.taxBps)?.ready : false);
 
   async function run(from = 0) {
     setErr(null);
@@ -640,11 +705,12 @@ function StepLaunch({ f, goto }: { f: Form; goto: (n: number) => void }) {
         say(`  metadata → ${meta.uri.slice(0, 48)}…`);
 
         setAt(1);
-        say(`$ doxed create $${f.symbol} --on ${f.launchpad} --dev-buy ${f.devBuy}`);
+        say(`$ doxed create $${f.symbol} --on ${f.launchpad} --dev-buy ${f.devBuy}${f.launchpad === "meteora" ? ` --tax ${f.taxBps! / 100}%` : ""}`);
         const built = await http<{ mint: string; tx: string }>("/launch/create-tx", {
           method: "POST",
           json: {
             launchpad: f.launchpad,
+            taxBps: f.launchpad === "meteora" ? f.taxBps : undefined,
             name: f.name.trim(),
             symbol: f.symbol,
             description: f.description || undefined,
@@ -746,7 +812,7 @@ function StepLaunch({ f, goto }: { f: Form; goto: (n: number) => void }) {
         {(
           [
             ["Token", `${f.name} ($${f.symbol})`, 2],
-            ["Launchpad", lp?.name, 1],
+            ["Launchpad", f.launchpad === "meteora" && f.taxBps ? `${lp?.name} · ${f.taxBps / 100}% trading tax` : lp?.name, 1],
             ["Dev buy", `${f.devBuy} SOL`, 2],
             ["Lock", `100% for ${f.months} months`, 3],
             ...(cfg?.launchFeeSol ? ([["Platform fee", `${cfg.launchFeeSol} SOL · includes $100/mo Builder API credit`, 4]] as [string, ReactNode, number][]) : []),
@@ -794,7 +860,7 @@ function StepLaunch({ f, goto }: { f: Form; goto: (n: number) => void }) {
       )}
 
       {err && <p className="mt-3 text-sm text-danger">{err}</p>}
-      {blocked && <p className="mt-3 text-sm text-muted-foreground">Pump.fun launches aren't switched on yet on this server. LetsBonk works now.</p>}
+      {blocked && <p className="mt-3 text-sm text-muted-foreground">{lp?.name} launches{f.launchpad === "meteora" ? ` at ${f.taxBps! / 100}% tax` : ""} aren't switched on yet — go back and pick another option.</p>}
 
       <div className="mt-5 flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
         <button onClick={() => goto(3)} disabled={running} className="btn-ghost">

@@ -86,6 +86,12 @@ export function TokenPage() {
             <CopyButton value={t.mint} label={short(t.mint, 6, 6)} />
             <span>•</span>
             <span>Launched {ago(t.createdAt)} ago</span>
+            {t.taxPct != null && (
+              <>
+                <span>•</span>
+                <span className="text-foreground">Tax {t.taxPct}%</span>
+              </>
+            )}
             <span>•</span>
             <span>
               Dev{" "}
@@ -113,8 +119,13 @@ export function TokenPage() {
             )}
           </div>
         </div>
-        <a href="#" className="btn-primary">
-          Trade on {lp.name} ↗
+        <a
+          href={t.launchpad === "pumpfun" ? `https://pump.fun/coin/${t.mint}` : `https://jup.ag/swap/SOL-${t.mint}`}
+          target="_blank"
+          rel="noreferrer"
+          className="btn-primary"
+        >
+          {t.launchpad === "pumpfun" ? `Trade on ${lp.name}` : "Trade"} ↗
         </a>
       </header>
 
@@ -485,9 +496,11 @@ function FeesCard({ t, claimed }: { t: Token; claimed: number }) {
   const max = Math.max(...t.feeClaims.map((c) => c.amountSol), 1);
   return (
     <SectionCard id="fees" className="scroll-mt-20" title="Dev claim fees" subtitle="On-chain creator fee claims" icon={<Coins />}>
-      <div className="grid grid-cols-2 gap-2">
+      <div className={cn("grid gap-2", t.taxPct != null || t.feesUnclaimedSol != null ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2")}>
         <Box label="Claimed total" value={sol(claimed)} />
         <Box label="Claims" value={String(t.feeClaims.length)} />
+        {t.taxPct != null && <Box label="Trading tax" value={`${t.taxPct}%`} />}
+        {t.feesUnclaimedSol != null && <Box label="Unclaimed" value={sol(t.feesUnclaimedSol)} />}
       </div>
       <p className="mt-3 text-xs text-muted-foreground">
         Trading fees the dev has withdrawn. Claiming fees is normal — sudden large claims right before a dump are worth noticing.

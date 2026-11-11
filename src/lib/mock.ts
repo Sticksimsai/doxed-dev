@@ -13,40 +13,13 @@ export const LAUNCHPADS: Launchpad[] = [
     available: true,
   },
   {
-    id: "raydium",
-    name: "Raydium LaunchLab",
-    tagline: "Custom curves, deep Raydium liquidity",
-    graduatesTo: "Raydium AMM",
-    bestFor: "Projects that want more control over curve settings",
-    color: "oklch(0.72 0.16 285)",
-    available: true,
-  },
-  {
-    id: "bonk",
-    name: "LetsBonk",
-    tagline: "BONK ecosystem reach",
-    graduatesTo: "Raydium AMM",
-    bestFor: "Tokens leaning into the BONK community",
-    color: "oklch(0.8 0.15 70)",
-    available: true,
-  },
-  {
     id: "meteora",
-    name: "Meteora DBC",
-    tagline: "Dynamic bonding curve, flexible fees",
-    graduatesTo: "Meteora DAMM",
-    bestFor: "Teams that want fee-sharing and LP flexibility",
+    name: "Meteora",
+    tagline: "Set your own trading tax — paid to you in SOL",
+    graduatesTo: "Meteora DAMM v2",
+    bestFor: "Projects that want ongoing revenue from volume",
     color: "oklch(0.72 0.17 25)",
     available: true,
-  },
-  {
-    id: "float",
-    name: "Float",
-    tagline: "Coming soon",
-    graduatesTo: "—",
-    bestFor: "Adapter in progress",
-    color: "oklch(0.75 0.12 230)",
-    available: false,
   },
 ];
 
@@ -160,6 +133,7 @@ type Seed = {
   symbol: string;
   hue: number;
   launchpad: Token["launchpad"];
+  taxPct?: number;
   devId: string;
   ageH: number;
   mcap: number;
@@ -179,6 +153,7 @@ const SEEDS: Seed[] = [
     symbol: "ORBIT",
     hue: 148,
     launchpad: "meteora",
+    taxPct: 3,
     devId: "d1",
     ageH: 21 * 24,
     mcap: 4_820_000,
@@ -274,7 +249,8 @@ const SEEDS: Seed[] = [
     name: "Harbor",
     symbol: "HRBR",
     hue: 210,
-    launchpad: "raydium",
+    launchpad: "meteora",
+    taxPct: 2,
     devId: "d4",
     ageH: 3 * 24,
     mcap: 860_000,
@@ -299,7 +275,7 @@ const SEEDS: Seed[] = [
     name: "Sol Sprout",
     symbol: "SPROUT",
     hue: 120,
-    launchpad: "bonk",
+    launchpad: "pumpfun",
     devId: "d3",
     ageH: 30,
     mcap: 182_000,
@@ -345,6 +321,7 @@ const SEEDS: Seed[] = [
     symbol: "LGRL",
     hue: 180,
     launchpad: "meteora",
+    taxPct: 5,
     devId: "d4",
     ageH: 12 * 24,
     mcap: 2_310_000,
@@ -402,6 +379,7 @@ function buildToken(s: Seed, i: number): Token {
     symbol: s.symbol,
     hue: s.hue,
     launchpad: s.launchpad,
+    taxPct: s.taxPct ?? null,
     devId: s.devId,
     createdAt: new Date(start).toISOString(),
     stage: s.graduated ? "graduated" : "bonding",

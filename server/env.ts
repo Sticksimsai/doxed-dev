@@ -30,6 +30,12 @@ export const env = {
   /** Identity provider: "didit" (ID scan + face scan) or "mock" (instant approve, staging only). */
   kydProvider: (!e.KYD_PROVIDER || e.KYD_PROVIDER === "auto" ? (e.DIDIT_API_KEY ? "didit" : "mock") : e.KYD_PROVIDER) as "mock" | "didit" | "webhook",
   diditApiKey: e.DIDIT_API_KEY ?? "",
+  // Meteora preset — every launch shares these; devs only pick the tax.
+  meteoraTaxOptions: (e.METEORA_TAX_OPTIONS ?? "1,2,3,4,5").split(",").map(Number).filter((n) => n > 0),
+  meteoraConfigs: e.METEORA_CONFIGS ?? "", // optional "3:ConfigKey,5:ConfigKey"
+  meteoraCreatorFeeShare: Math.min(100, Math.max(0, Number(e.METEORA_CREATOR_FEE_SHARE ?? 80))),
+  meteoraInitialMcapSol: Number(e.METEORA_INITIAL_MCAP_SOL ?? 30),
+  meteoraGraduationMcapSol: Number(e.METEORA_GRADUATION_MCAP_SOL ?? 400),
   /** Optional — created automatically on first boot and remembered in the database. */
   diditWorkflowId: e.DIDIT_WORKFLOW_ID ?? "",
   diditWebhookSecret: e.DIDIT_WEBHOOK_SECRET ?? "",
@@ -37,7 +43,7 @@ export const env = {
   idHashSecret: e.ID_HASH_SECRET ?? e.SESSION_SECRET ?? "dev-only-id-hash",
   /** Wallets allowed to use /admin (comma separated). */
   adminWallets: (e.ADMIN_WALLETS ?? "").split(",").map((s) => s.trim()).filter(Boolean),
-  /** Pinata JWT for Pump.fun metadata (IPFS). LetsBonk uses its own free uploader. */
+  /** Pinata JWT — token image + metadata storage for every launch. */
   pinataJwt: e.PINATA_JWT ?? "",
   /** Builder API: master OpenRouter key that every dev key routes through. */
   openrouterKey: e.OPENROUTER_API_KEY ?? "",

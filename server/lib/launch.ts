@@ -1,6 +1,8 @@
 // In-app launches. The server builds transactions; the dev's wallet signs them. We never hold user keys.
-//   1. metadata  → IPFS (Pinata for Pump.fun, LetsBonk's uploader for Bonk)
-//   2. create    → PumpPortal "trade-local" builds create + dev buy; we pre-sign with a fresh mint keypair
+//   1. metadata  → IPFS (Pinata)
+//   2. create    → Pump.fun: PumpPortal "trade-local" builds create + dev buy
+//                  Meteora:  DBC pool on the shared preset config for the chosen tax tier, + dev buy
+//                  Either way we pre-sign with a fresh mint keypair; the dev's wallet signs and pays.
 //   3. lock      → Streamflow token lock for 100% of the dev wallet's balance, non-cancellable
 import {
   ComputeBudgetProgram,
@@ -15,8 +17,9 @@ import {
 import BN from "bn.js";
 import { ICluster, SolanaStreamClient, StreamType, buildLockParams } from "@streamflow/stream";
 import { env } from "../env";
+import { buildMeteoraCreateTx } from "./meteora";
 
-export const IN_APP_LAUNCHPADS = ["pumpfun", "bonk"] as const;
+export const IN_APP_LAUNCHPADS = ["pumpfun", "meteora"] as const;
 export type InAppLaunchpad = (typeof IN_APP_LAUNCHPADS)[number];
 
 export const rpcUrl = () =>
@@ -48,30 +51,7 @@ async function pinata(file: Blob, name: string) {
 }
 
 export async function uploadMetadata(m: MetaInput): Promise<{ uri: string; image: string }> {
-  if (m.launchpad === "bonk") {
-    const fd = new FormData();
-    fd.append("image", m.image, m.imageName);
-    const img = await fetch("https://nft-storage.letsbonk22.workers.dev/upload/img", { method: "POST", body: fd });
-    if (!img.ok) throw new Error("Image upload failed — try a smaller PNG or JPG.");
-    const image = (await img.text()).trim();
-    const meta = await fetch("https://nft-storage.letsbonk22.workers.dev/upload/meta", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        createdOn: "https://bonk.fun",
-        name: m.name,
-        symbol: m.symbol,
-        description: m.description ?? "",
-        image,
-        website: m.website ?? "",
-        twitter: m.x ?? "",
-        telegram: m.telegram ?? "",
-      }),
-    });
-    if (!meta.ok) throw new Error("Couldn't save token details — try again.");
-    return { uri: (await meta.text()).trim(), image };
-  }
-  if (!env.pinataJwt) throw new Error("Pump.fun launches aren't enabled yet — LetsBonk works now.");
+  if (!env.pinataJwt) throw new Error("Launches aren't switched on yet — image storage isn't set up.");
   const image = await pinata(m.image, m.imageName);
   const json = JSON.stringify({
     name: m.name,
@@ -79,7 +59,7 @@ export async function uploadMetadata(m: MetaInput): Promise<{ uri: string; image
     description: m.description ?? "",
     image,
     showName: true,
-    createdOn: "https://pump.fun",
+    createdOn: m.launchpad === "pumpfun" ? "https://pump.fun" : env.publicUrl,
     twitter: m.x ?? undefined,
     telegram: m.telegram ?? undefined,
     website: m.website ?? undefined,
@@ -89,7 +69,8 @@ export async function uploadMetadata(m: MetaInput): Promise<{ uri: string; image
 }
 
 // ------------------------------------------------------------------ 2. create + dev buy
-export async function buildCreateTx(p: { wallet: string; launchpad: InAppLaunchpad; name: string; symbol: string; uri: string; devBuySol: number }) {
+export async function buildCreateTx(p: { wallet: string; launchpad: InAppLaunchpad; name: string; symbol: string; uri: string; devBuySol: number; taxBps?: number }): Promise<{ mint: string; tx: string; pool?: string }> {
+  if (p.launchpad === "meteora") return buildMeteoraCreateTx({ ...p, taxBps: p.taxBps ?? 0 });
   const mint = Keypair.generate();
   const res = await fetch("https://pumpportal.fun/api/trade-local", {
     method: "POST",
@@ -103,7 +84,7 @@ export async function buildCreateTx(p: { wallet: string; launchpad: InAppLaunchp
       amount: p.devBuySol,
       slippage: 10,
       priorityFee: env.priorityFeeSol,
-      pool: p.launchpad === "bonk" ? "bonk" : "pump",
+      pool: "pump",
     }),
   });
   if (res.status !== 200) throw new Error(`Couldn't build the launch transaction (${res.status} ${res.statusText}).`);

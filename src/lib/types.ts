@@ -120,6 +120,8 @@ export interface Token {
   feeClaims: FeeClaim[];
   /** null when the launchpad doesn't expose unclaimed fees */
   feesUnclaimedSol: number | null;
+  /** Trading tax set at launch (Meteora), in %. */
+  taxPct?: number | null;
   /** undefined until the first AI pass has run */
   ai?: AiSummary;
   repo?: RepoAnalysis;

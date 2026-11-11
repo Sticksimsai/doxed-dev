@@ -7,7 +7,7 @@ const PILLARS = [
   {
     icon: Layers,
     title: "Launch anywhere",
-    body: "Pick Pump.fun, Raydium LaunchLab, LetsBonk, Meteora and more. Your token is native to that launchpad — we sit on top.",
+    body: "Pick Pump.fun or Meteora — on Meteora you set your own trading tax. Your token is native to that launchpad; we sit on top.",
   },
   {
     icon: ShieldCheck,

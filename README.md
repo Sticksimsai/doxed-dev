@@ -97,8 +97,24 @@ Paste keys in Render → doxed-dev → Environment; blank or `paste-here` values
 | `OPENROUTER_API_KEY` | Builder API, and AI summaries / repo reviews / fake-ID check when there's no Anthropic key |
 | `HELIUS_API_KEY` | Fee-claim history, reliable lock checks + transaction sending |
 | `DIDIT_API_KEY`, `DIDIT_WEBHOOK_SECRET` | Real ID scan → face scan (workflow is created automatically) |
-| `PINATA_JWT` | Pump.fun launches (LetsBonk works without it) |
+| `PINATA_JWT` | Token image + metadata storage — needed for all launches |
 | `LAUNCH_FEE_SOL`, `TREASURY_WALLET` | Platform launch fee |
 | `ANTHROPIC_API_KEY`, `GITHUB_TOKEN`, `X_BEARER_TOKEN` | Optional |
 
 After real verification is on: set `ALLOW_MOCK_KYD=false`, `SEED_DEMO=false`, and press **Remove demo data** on the Setup page.
+
+## Meteora launches
+
+Every Meteora launch uses one fixed preset (1B supply, ~30 → ~400 SOL market-cap curve, graduates to DAMM v2 with 100% of LP locked
+forever). The dev only picks the trading tax. Each tax option has one shared on-chain config key, created once from **/admin → Meteora presets**
+(your wallet pays ~0.01 SOL rent per tier). The tax is paid in SOL; `METEORA_CREATOR_FEE_SHARE` (default 80) % goes to the dev,
+the rest to `TREASURY_WALLET`.
+
+| Key | Default | |
+| --- | --- | --- |
+| `METEORA_TAX_OPTIONS` | `1,2,3,4,5` | Tax % choices (0.25–10) |
+| `METEORA_CREATOR_FEE_SHARE` | `80` | Dev's share of the tax |
+| `METEORA_INITIAL_MCAP_SOL` / `METEORA_GRADUATION_MCAP_SOL` | `30` / `400` | Curve |
+| `METEORA_CONFIGS` | – | Use existing config keys: `3:Key,5:Key` |
+
+Changing any preset value means new config keys (old launches keep theirs).

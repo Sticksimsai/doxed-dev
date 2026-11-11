@@ -5,6 +5,7 @@ import { sql } from "../db";
 import { aiProvider, resolveModel } from "./ai";
 import { createWorkflow } from "./didit";
 import { getSetting, setSetting } from "./settings";
+import { presetTiers } from "./meteora";
 
 const OR_BASE = process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1";
 
@@ -125,13 +126,13 @@ export async function setupChecks(): Promise<{ publicUrl: string; webhookUrl: st
   add(
     (async (): Promise<Check> => {
       const keys = [k("PINATA_JWT", !!env.pinataJwt)];
-      if (!env.pinataJwt) return { id: "ipfs", name: "Pump.fun launches", purpose: "Token image + metadata storage", keys, status: "missing", detail: "Pump.fun is off — LetsBonk launches still work" };
+      if (!env.pinataJwt) return { id: "ipfs", name: "Launches", purpose: "Token image + metadata storage", keys, status: "missing", detail: "All launches are off until this is set" };
       const [s, d] = await probe(async () => {
         const r = await fetch("https://api.pinata.cloud/data/testAuthentication", { headers: { authorization: `Bearer ${env.pinataJwt}` }, ...timeout() });
         if (!r.ok) throw new Error(r.status === 401 ? "Key rejected" : `HTTP ${r.status}`);
         return "Connected";
       });
-      return { id: "ipfs", name: "Pump.fun launches", purpose: "Token image + metadata storage", keys, status: s, detail: d };
+      return { id: "ipfs", name: "Launches", purpose: "Token image + metadata storage", keys, status: s, detail: d };
     })(),
   );
 
@@ -148,6 +149,21 @@ export async function setupChecks(): Promise<{ publicUrl: string; webhookUrl: st
       detail: ok ? `${env.launchFeeSol} SOL per launch → ${env.treasuryWallet.slice(0, 4)}…${env.treasuryWallet.slice(-4)}` : fee || env.treasuryWallet ? "Set both the fee and a valid treasury wallet" : "Launches are free",
     });
   }
+
+  add(
+    (async (): Promise<Check> => {
+      const tiers = await presetTiers();
+      const live = tiers.filter((t) => t.config).length;
+      return {
+        id: "meteora",
+        name: "Meteora tax tiers",
+        purpose: "Shared preset config key per tax option",
+        keys: [k("TREASURY_WALLET", !!env.treasuryWallet), k("METEORA_TAX_OPTIONS", !!process.env.METEORA_TAX_OPTIONS, false)],
+        status: live === tiers.length ? "ok" : live ? "partial" : "missing",
+        detail: `${live}/${tiers.length} live (${tiers.map((t) => `${t.taxBps / 100}%${t.config ? "✓" : ""}`).join(" ")}) — create them in Meteora presets below`,
+      };
+    })(),
+  );
 
   add({
     id: "admin",

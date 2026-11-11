@@ -264,8 +264,7 @@ data: [DONE]`,
       Request: `curl ${DATA}/launchpads`,
       Response: `[
   { "id": "pumpfun", "name": "Pump.fun", "graduatesTo": "PumpSwap", "available": true },
-  { "id": "bonk", "name": "LetsBonk", "graduatesTo": "Raydium AMM", "available": true },
-  …
+  { "id": "meteora", "name": "Meteora", "graduatesTo": "Meteora DAMM v2", "available": true }
 ]`,
     },
   },

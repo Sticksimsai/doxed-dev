@@ -58,6 +58,7 @@ type EnhancedTx = {
   timestamp: number | null;
   type: string;
   feePayer?: string;
+  instructions?: { programId: string }[];
   tokenTransfers?: Transfer[];
   nativeTransfers?: Transfer[];
 };
@@ -71,7 +72,17 @@ export type FeeClaim = { signature: string; at: Date; amountSol: number; amountU
  * addresses (or the mint as a noisy fallback) — not the dev wallet itself, so claims
  * from the dev's other tokens are never attributed here.
  */
-export async function devFeeClaims(devWallet: string, addresses: string[], maxPages = 5): Promise<FeeClaim[]> {
+// Meteora claims aren't always labelled by the indexer: treat a dev-signed, non-swap call to the bonding
+// curve / graduated pool program that pays the dev SOL (and moves none of the token) as a fee claim.
+const FEE_PROGRAMS = new Set(["dbcij3LWUppWqq96dh6gJWwBifmcGfLSB5D4DuSMaqN", "cpamdpZCGKUy5JxQXB4dcpGPiikHawvSWAd6mEn1sGG"]);
+const isClaim = (t: EnhancedTx, devWallet: string, mint?: string) =>
+  /^CLAIM/i.test(t.type) ||
+  (t.type !== "SWAP" &&
+    t.feePayer === devWallet &&
+    (t.instructions ?? []).some((i) => FEE_PROGRAMS.has(i.programId)) &&
+    !(t.tokenTransfers ?? []).some((x) => x.mint === mint));
+
+export async function devFeeClaims(devWallet: string, addresses: string[], maxPages = 5, mint?: string): Promise<FeeClaim[]> {
   if (!env.heliusKey || !addresses.length) return [];
   const seen = new Map<string, EnhancedTx>();
   for (const addr of [...new Set(addresses)]) {
@@ -85,7 +96,7 @@ export async function devFeeClaims(devWallet: string, addresses: string[], maxPa
       if (!res.ok) break;
       const txs = (await res.json()) as EnhancedTx[];
       if (!Array.isArray(txs) || !txs.length) break;
-      for (const t of txs) if (/^CLAIM/i.test(t.type)) seen.set(t.signature, t);
+      for (const t of txs) if (isClaim(t, devWallet, mint)) seen.set(t.signature, t);
       before = txs[txs.length - 1].signature;
       if (txs.length < 100) break;
       await sleep(150);

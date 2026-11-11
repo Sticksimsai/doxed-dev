@@ -5,6 +5,7 @@ import { fetchAsset, toMarketRow } from "./lib/market";
 import { devFeeClaims } from "./lib/solana";
 import { verifyLock } from "./lib/launch";
 import { syncFromDidit } from "./lib/kyd";
+import { unclaimedCreatorFeeSol } from "./lib/meteora";
 import { aiReady, pageText, recentPosts, reviewRepo, summariseProject } from "./lib/ai";
 import { parseRepo, repoFacts } from "./lib/github";
 
@@ -34,12 +35,16 @@ export async function refreshMarket() {
 
 export async function refreshFees() {
   if (!env.heliusKey) return;
-  const rows = await sql<{ mint: string; wallet: string; pool_address: string | null; graduated_pool: string | null }[]>`
-    select l.mint, p.wallet, l.pool_address, l.graduated_pool from launches l join dev_profiles p using (dev_id)
+  const rows = await sql<{ mint: string; wallet: string; launchpad: string; stage: string; pool_address: string | null; graduated_pool: string | null }[]>`
+    select l.mint, p.wallet, l.launchpad, l.stage, l.pool_address, l.graduated_pool from launches l join dev_profiles p using (dev_id)
     where not l.is_demo and l.stage in ('bonding','graduated')`;
   for (const r of rows) {
     const pools = [r.pool_address, r.graduated_pool].filter(Boolean) as string[];
-    const claims = await devFeeClaims(r.wallet, pools.length ? pools : [r.mint]);
+    const claims = await devFeeClaims(r.wallet, pools.length ? pools : [r.mint], 5, r.mint);
+    if (r.launchpad === "meteora" && r.pool_address && r.stage === "bonding") {
+      const unclaimed = await unclaimedCreatorFeeSol(r.pool_address).catch(() => null);
+      if (unclaimed != null) await sql`update launches set fees_unclaimed_sol = ${unclaimed} where mint = ${r.mint}`;
+    }
     for (const c of claims)
       await sql`insert into fee_claims (signature, mint, claimed_at, amount_sol, amount_usdc, claimer)
                 values (${c.signature}, ${r.mint}, ${c.at}, ${c.amountSol}, ${c.amountUsdc}, ${c.claimer}) on conflict do nothing`;
