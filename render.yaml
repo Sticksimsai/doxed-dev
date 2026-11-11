@@ -4,6 +4,7 @@ services:
     runtime: node
     name: doxed-dev
     plan: free
+    region: frankfurt
     buildCommand: npm ci --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
@@ -34,3 +35,5 @@ services:
 databases:
   - name: doxed-db
     plan: free
+    region: frankfurt
+    postgresMajorVersion: "18"
