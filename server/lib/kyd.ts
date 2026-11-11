@@ -43,6 +43,8 @@ export async function startVerification(wallet: string, alias: string, disclosur
               verified_at = now(), decided_by = 'mock', decided_at = now(), updated_at = now() where dev_id = ${devId}`;
     return { status: "approved" };
   }
+  // If the boot-time workflow setup failed (e.g. provider hiccup), try again now.
+  if (env.kydProvider === "didit" && env.diditApiKey && !env.diditWorkflowId) await (await import("./setup")).bootstrapIntegrations();
   if (env.kydProvider !== "didit" || !env.diditApiKey || !env.diditWorkflowId) throw new Error("Identity verification isn't configured.");
 
   // Reuse an open session (Didit also enforces one open session per dev), or open a fresh one after a rejection.

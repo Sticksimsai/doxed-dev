@@ -95,8 +95,10 @@ export function createWorkflow() {
     method: "POST",
     body: JSON.stringify({
       workflow_label: "Doxed Dev KYC",
+      is_white_label_enabled: true,
       features: [
-        { feature: "ID_VERIFICATION" },
+        // Order matters: the ID document (OCR) must come before face match.
+        { feature: "OCR", config: { duplicated_user_action: "REVIEW" } },
         { feature: "LIVENESS", config: { face_liveness_method: "PASSIVE" } },
         { feature: "FACE_MATCH" },
         { feature: "IP_ANALYSIS" },
