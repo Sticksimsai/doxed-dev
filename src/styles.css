@@ -1,0 +1,116 @@
+@import "tailwindcss";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "@fontsource-variable/bricolage-grotesque";
+
+/*
+ * Same DNA as EZ Screener (deep green-black, neon green, Space Grotesk + DM Sans),
+ * tuned for readability: brighter secondary text, calmer borders, and
+ * dedicated colours for trust states (verified / caution / risk).
+ */
+@theme inline {
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-raised: var(--raised);
+  --color-secondary: var(--raised);
+  --color-accent: var(--accent);
+  --color-destructive: var(--danger);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle: var(--subtle);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --font-sans: "Geist Variable", system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque Variable", "Geist Variable", system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root {
+  /* "Ink & Signal" — deep ink navy, signal-amber accent (the seal), mint for gains */
+  --background: oklch(0.145 0.018 268);
+  --card: oklch(0.185 0.02 268);
+  --raised: oklch(0.225 0.022 268);
+  --accent: oklch(0.25 0.025 268);
+  --foreground: oklch(0.97 0.006 268);
+  --muted: oklch(0.21 0.02 268);
+  --muted-foreground: oklch(0.73 0.02 268);
+  --subtle: oklch(0.58 0.02 268);
+  --primary: oklch(0.83 0.155 78);
+  --primary-foreground: oklch(0.18 0.03 70);
+  --border: oklch(0.85 0.03 268 / 9%);
+  --border-strong: oklch(0.85 0.03 268 / 16%);
+  --success: oklch(0.8 0.15 165);
+  --warning: oklch(0.8 0.14 55);
+  --danger: oklch(0.7 0.18 22);
+  --info: oklch(0.74 0.12 235);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html, body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    color-scheme: dark;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, .font-display { font-family: var(--font-display); letter-spacing: -0.02em; font-optical-sizing: auto; }
+  .tabular { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  :focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; border-radius: 6px; }
+  ::selection { background: oklch(0.83 0.155 78 / 30%); }
+}
+
+@utility card { @apply rounded-xl border border-border bg-card; }
+@utility card-pad { @apply p-4 sm:p-5; }
+@utility eyebrow { @apply text-[10px] uppercase tracking-[0.14em] text-muted-foreground; }
+@utility btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50; }
+@utility btn-primary { @apply btn bg-primary text-primary-foreground hover:brightness-110; }
+@utility btn-ghost { @apply btn border border-border bg-secondary text-foreground hover:bg-accent; }
+@utility chip { @apply inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium; }
+@utility input { @apply h-10 w-full rounded-md border border-border bg-card px-3 text-sm outline-none placeholder:text-subtle focus:border-primary/60 focus:ring-2 focus:ring-primary/20; }
+@utility redacted {
+  display: inline-block;
+  vertical-align: middle;
+  border-radius: 3px;
+  height: 0.9em;
+  background: repeating-linear-gradient(90deg, oklch(0.85 0.03 268 / 20%) 0 6px, oklch(0.85 0.03 268 / 10%) 6px 7px);
+}
+
+.glow-ring { box-shadow: 0 0 0 1px oklch(0.83 0.155 78 / 40%), 0 0 24px oklch(0.83 0.155 78 / 14%); }
+.bg-grid {
+  background-image:
+    linear-gradient(oklch(0.85 0.03 268 / 4.5%) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.85 0.03 268 / 4.5%) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.ca-glow { animation: ca-glow 2.4s ease-in-out infinite; }
+@keyframes ca-glow {
+  0%, 100% { box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 30%, transparent), 0 0 10px color-mix(in oklab, var(--primary) 18%, transparent); }
+  50% { box-shadow: 0 0 0 1px color-mix(in oklab, var(--primary) 55%, transparent), 0 0 22px color-mix(in oklab, var(--primary) 38%, transparent); }
+}
+
+/* Soft aurora behind hero sections */
+.aurora {
+  background:
+    radial-gradient(60% 80% at 100% 0%, oklch(0.83 0.155 78 / 13%), transparent 60%),
+    radial-gradient(50% 70% at 0% 100%, oklch(0.6 0.15 280 / 14%), transparent 60%),
+    linear-gradient(135deg, var(--card), var(--background));
+}
+.fade-up { animation: fade-up 0.5s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .fade-up, .ca-glow, .animate-ping { animation: none !important; } }

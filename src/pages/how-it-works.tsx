@@ -1,0 +1,149 @@
+import { Link } from "@tanstack/react-router";
+import { ChevronDown, Coins, EyeOff, Layers, Lock, Rocket, ShieldCheck, Sparkles } from "lucide-react";
+import { APP_NAME, LOCK_MIN_MONTHS } from "@/lib/brand";
+import { LAUNCHPADS } from "@/lib/mock";
+
+const PILLARS = [
+  {
+    icon: Layers,
+    title: "Launch anywhere",
+    body: "Pick Pump.fun, Raydium LaunchLab, LetsBonk, Meteora and more. Your token is native to that launchpad — we sit on top.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Know Your Dev",
+    body: "Every dev verifies their identity with us before launching. Holders see the badge; the personal details stay private.",
+  },
+  {
+    icon: Lock,
+    title: `100% locked, ${LOCK_MIN_MONTHS}+ months`,
+    body: "Every token the dev holds at launch is locked on-chain with Streamflow. The contract is public and linked on every token page.",
+  },
+  {
+    icon: Sparkles,
+    title: "AI research, always fresh",
+    body: "Each token gets a plain-English summary built from its X and website, plus a code review when a GitHub is linked.",
+  },
+  {
+    icon: Coins,
+    title: "Fee claim history",
+    body: "Every creator-fee withdrawal is listed with its transaction, so you can see how and when the dev takes revenue.",
+  },
+  {
+    icon: EyeOff,
+    title: "Privacy by default",
+    body: "Devs choose what to reveal: badge only, linked socials, or their real name. They can reveal more later, never less.",
+  },
+];
+
+const FAQ = [
+  {
+    q: "Who can see a dev's identity documents?",
+    a: `Only ${APP_NAME}'s verification provider and a small compliance team. They are never published, and never shared with holders or launchpads.`,
+  },
+  {
+    q: "What happens if a dev breaks the rules?",
+    a: "Their profile is publicly flagged on every token they launched and they can't launch with us again. Identity details are only released where the law requires it, for example to law enforcement with a valid request.",
+  },
+  {
+    q: "Does verification mean a token is safe to buy?",
+    a: "No. It means a real, accountable person is behind it and their own tokens can't be dumped for at least 12 months. Price can still go to zero — always research before buying.",
+  },
+  {
+    q: "What exactly is locked?",
+    a: `100% of the tokens in the dev's launch wallet after the dev buy, for at least ${LOCK_MIN_MONTHS} months. Tokens bought by the public on the curve are not locked.`,
+  },
+  {
+    q: "How often is the AI summary updated?",
+    a: "Several times a day and whenever the project posts something new on X or changes its website. The timestamp on each summary shows when it last ran.",
+  },
+];
+
+export function HowItWorksPage() {
+  return (
+    <div className="mx-auto max-w-4xl space-y-10">
+      <header className="text-center">
+        <span className="chip border-primary/30 bg-primary/10 text-primary">How {APP_NAME} works</span>
+        <h1 className="mt-4 text-3xl font-semibold sm:text-4xl">Trust layer for Solana launchpads</h1>
+        <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
+          We don't replace your favourite launchpad. We add the two things memecoins are missing: an accountable dev and a dev
+          bag that can't be dumped.
+        </p>
+      </header>
+
+      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {PILLARS.map((p) => (
+          <div key={p.title} className="card p-5">
+            <p.icon className="h-5 w-5 text-primary" />
+            <h3 className="mt-3 font-semibold">{p.title}</h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{p.body}</p>
+          </div>
+        ))}
+      </section>
+
+      <section className="grid gap-4 md:grid-cols-2">
+        <div className="card p-5">
+          <div className="eyebrow">For holders</div>
+          <ol className="mt-3 space-y-3 text-sm">
+            {[
+              "Browse Discover — every token listed has a verified dev.",
+              "Open a token: check the trust strip at the top (dev, lock, fees, code).",
+              "Read the AI summary and watch-outs, then decide.",
+            ].map((s, i) => (
+              <li key={s} className="flex gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-raised text-xs font-semibold">{i + 1}</span>
+                <span className="text-muted-foreground">{s}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <div className="card p-5">
+          <div className="eyebrow">For devs</div>
+          <ol className="mt-3 space-y-3 text-sm">
+            {[
+              "Verify once (about 2 minutes) and pick what to make public.",
+              "Choose a launchpad and fill in your token details.",
+              `Launch — your dev tokens lock for ${LOCK_MIN_MONTHS}+ months automatically.`,
+            ].map((s, i) => (
+              <li key={s} className="flex gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-raised text-xs font-semibold">{i + 1}</span>
+                <span className="text-muted-foreground">{s}</span>
+              </li>
+            ))}
+          </ol>
+          <Link to="/launch" className="btn-primary mt-5 w-full">
+            <Rocket className="h-4 w-4" /> Start a launch
+          </Link>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-lg font-semibold">Supported launchpads</h2>
+        <div className="flex flex-wrap gap-2">
+          {LAUNCHPADS.map((l) => (
+            <span key={l.id} className="chip border-border-strong px-3 py-1.5 text-sm text-muted-foreground">
+              <span className="h-2 w-2 rounded-full" style={{ background: l.color }} />
+              {l.name}
+              {!l.available && <span className="text-subtle">· soon</span>}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-lg font-semibold">Questions</h2>
+        <div className="space-y-2">
+          {FAQ.map((f) => (
+            <details key={f.q} className="card group p-4 [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-medium">
+                {f.q}
+                <ChevronDown className="h-4 w-4 shrink-0 text-subtle transition group-open:rotate-180" />
+              </summary>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.a}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
