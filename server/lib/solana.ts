@@ -1,6 +1,5 @@
 // Solana access via Helius (falls back to the public RPC for reads).
 // Ported and trimmed from EZ Screener's helius.server.ts / locked-supply.server.ts / dev-fees.server.ts.
-import bs58 from "bs58";
 import { env } from "../env";
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -49,90 +48,6 @@ export async function tokenSupply(mint: string): Promise<number | null> {
   } catch {
     return null;
   }
-}
-
-// ---------------------------------------------------------------- Streamflow locks
-
-/**
- * Streamflow vesting contract layout (byte offsets). Mint/escrow/end_time match
- * EZ Screener's production detector; sender/recipient follow the same struct.
- * Verify against the Streamflow SDK before relying on cancel flags.
- */
-const STREAMFLOW = "strmRqUCoQUgGUan5YhzUZa6KqdzwX5L6FpUxfmKg5m";
-const OFF = { endTime: 33, sender: 49, recipient: 113, mint: 177, escrow: 209 } as const;
-
-const u64 = (b: Uint8Array, o: number) => {
-  let v = 0;
-  for (let i = 7; i >= 0; i--) v = v * 256 + b[o + i];
-  return v;
-};
-const key = (b: Uint8Array, o: number) => bs58.encode(b.slice(o, o + 32));
-
-export type StreamLock = { contract: string; sender: string; recipient: string; amount: number; endTime: number | null };
-
-/** All live Streamflow streams for a mint, with their escrow balances. */
-export async function streamflowLocks(mint: string): Promise<StreamLock[]> {
-  const raw = await rpc<{ pubkey: string; account: { data: [string, "base64"] } }[]>("getProgramAccounts", [
-    STREAMFLOW,
-    { encoding: "base64", commitment: "confirmed", filters: [{ memcmp: { offset: OFF.mint, bytes: mint } }] },
-  ]);
-  const now = Math.floor(Date.now() / 1000);
-  const parsed = (raw ?? [])
-    .map((a) => {
-      const b = Uint8Array.from(Buffer.from(a.account.data[0], "base64"));
-      if (b.length < OFF.escrow + 32) return null;
-      const end = u64(b, OFF.endTime);
-      return {
-        contract: a.pubkey,
-        sender: key(b, OFF.sender),
-        recipient: key(b, OFF.recipient),
-        escrow: key(b, OFF.escrow),
-        endTime: end > 1_600_000_000 && end < now + 50 * 365 * 86400 ? end : null,
-      };
-    })
-    .filter((x): x is NonNullable<typeof x> => !!x);
-
-  const out: StreamLock[] = [];
-  for (let i = 0; i < parsed.length; i += 100) {
-    const chunk = parsed.slice(i, i + 100);
-    const res = await rpc<{ value: ({ data: { parsed: { info: { tokenAmount: { uiAmount: number | null } } } } } | null)[] }>(
-      "getMultipleAccounts",
-      [chunk.map((c) => c.escrow), { encoding: "jsonParsed", commitment: "confirmed" }],
-    );
-    res.value.forEach((acc, j) => {
-      const amount = acc?.data?.parsed?.info?.tokenAmount?.uiAmount ?? 0;
-      if (amount > 0) out.push({ ...chunk[j], amount });
-    });
-  }
-  return out;
-}
-
-export type LockCheck =
-  | { ok: true; contract: string; amount: number; startsAt: Date; unlocksAt: Date; pctOfSupply: number | null }
-  | { ok: false; reason: string };
-
-/**
- * Launch policy: the dev wallet must hold 0 of the token, and Streamflow streams
- * sent by the dev wallet must hold > 0 tokens, all unlocking at least `minMonths` out.
- */
-export async function checkDevLock(mint: string, devWallet: string, minMonths: number): Promise<LockCheck> {
-  const [held, streams, supply] = await Promise.all([tokenBalance(devWallet, mint), streamflowLocks(mint), tokenSupply(mint)]);
-  if (held > 0) return { ok: false, reason: `Dev wallet still holds ${held.toLocaleString()} tokens — lock 100% of them first.` };
-  const mine = streams.filter((s) => s.sender === devWallet);
-  if (!mine.length) return { ok: false, reason: "No Streamflow lock from the dev wallet was found for this token." };
-  const minEnd = Date.now() / 1000 + minMonths * 30 * 86400 - 3 * 86400;
-  const short = mine.filter((s) => !s.endTime || s.endTime < minEnd);
-  if (short.length) return { ok: false, reason: `Lock unlocks too early — minimum term is ${minMonths} months.` };
-  const amount = mine.reduce((s, x) => s + x.amount, 0);
-  const unlock = Math.min(...mine.map((s) => s.endTime!));
-  return {
-    ok: true,
-    contract: mine[0].contract,
-    amount,
-    startsAt: new Date(),
-    unlocksAt: new Date(unlock * 1000),
-    pctOfSupply: supply ? Math.round((amount / supply) * 1e4) / 100 : null,
-  };
 }
 
 // ---------------------------------------------------------------- creator fee claims

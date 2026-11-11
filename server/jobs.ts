@@ -2,7 +2,9 @@
 import { sql } from "./db";
 import { env } from "./env";
 import { fetchAsset, toMarketRow } from "./lib/market";
-import { checkDevLock, devFeeClaims } from "./lib/solana";
+import { devFeeClaims } from "./lib/solana";
+import { verifyLock } from "./lib/launch";
+import { syncFromDidit } from "./lib/kyd";
 import { pageText, recentPosts, reviewRepo, summariseProject } from "./lib/ai";
 import { parseRepo, repoFacts } from "./lib/github";
 
@@ -91,6 +93,14 @@ export async function refreshAi(limit = 3) {
   }
 }
 
+/** Fallback for missed Didit webhooks: re-check open verification sessions. */
+export async function sweepVerifications() {
+  const rows = await sql<{ dev_id: string }[]>`
+    select dev_id from dev_kyc_private where status = 'in_progress' and updated_at < now() - interval '2 minutes'
+    and updated_at > now() - interval '2 days' limit 20`;
+  for (const r of rows) await syncFromDidit(r.dev_id).catch(() => null);
+}
+
 /** Picks up launches whose dev has locked on-chain but hasn't pressed "verify". */
 export async function sweepPendingLocks() {
   const rows = await sql<{ mint: string; wallet: string; lock_months: number }[]>`
@@ -100,7 +110,8 @@ export async function sweepPendingLocks() {
 }
 
 export async function confirmLock(mint: string, wallet: string, months: number) {
-  const res = await checkDevLock(mint, wallet, months);
+  const [l] = await sql`select lock_contract from launches where mint = ${mint}`;
+  const res = await verifyLock(mint, wallet, months, l?.lock_contract ? [l.lock_contract] : []);
   if (!res.ok) return res;
   await sql.begin(async (tx) => {
     await tx`
@@ -134,6 +145,7 @@ export function startJobs() {
   if (!env.jobs) return log("all", "disabled (RUN_JOBS=false)");
   every("market", 60_000, refreshMarket);
   every("locks", 5 * 60_000, sweepPendingLocks);
+  if (env.kydProvider === "didit") every("kyd", 3 * 60_000, sweepVerifications);
   every("fees", 15 * 60_000, refreshFees);
   every("ai", 10 * 60_000, () => refreshAi());
   if (!env.heliusKey) log("fees", "HELIUS_API_KEY missing — fee claims disabled, public RPC used for lock checks");

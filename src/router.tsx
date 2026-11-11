@@ -5,6 +5,7 @@ import { TokenPage } from "./pages/token";
 import { DevPage } from "./pages/dev";
 import { LaunchPage } from "./pages/launch";
 import { HowItWorksPage } from "./pages/how-it-works";
+import { AdminPage } from "./pages/admin";
 
 const root = createRootRoute({ component: AppShell });
 
@@ -14,6 +15,7 @@ const routeTree = root.addChildren([
   createRoute({ getParentRoute: () => root, path: "/dev/$id", component: DevPage }),
   createRoute({ getParentRoute: () => root, path: "/launch", component: LaunchPage }),
   createRoute({ getParentRoute: () => root, path: "/how-it-works", component: HowItWorksPage }),
+  createRoute({ getParentRoute: () => root, path: "/admin", component: AdminPage }),
 ]);
 
 export const router = createRouter({

@@ -19,15 +19,30 @@ npm run dev                      # UI on :5173, proxies /api to :8787
 ```
 `npm run build:preview` makes a single-file demo (mock data, no backend).
 
-## How a launch works
-1. **Sign in** — wallet signs a one-time message (`/api/auth/nonce` → `/api/auth/verify`), httpOnly session cookie.
-2. **Get doxed** — `/api/kyd/start`. In webhook mode the dev is sent to your KYC provider; the result comes back on
-   `/api/kyd/webhook` (HMAC-signed). Raw identity data lives only in `dev_kyc_private`; the public reads the
-   `dev_public_profiles` view, which applies the dev's disclosure choice. Disclosure can only go up (DB trigger).
-3. **Create the token** on the chosen launchpad from the same wallet, then register it — `POST /api/launches`.
-4. **Lock** 100% of the dev wallet's tokens on Streamflow for ≥ 12 months, then `POST /api/launches/:mint/verify-lock`
-   (also re-checked automatically for 7 days). The dev wallet must hold 0 tokens and the stream must be sent from it.
-   Only then is the token listed.
+## How a launch works (all in-app)
+1. **Sign in** — the wallet signs a one-time message; httpOnly session cookie.
+2. **Get doxed** — `POST /api/kyd/start` opens a Didit session, shown in an iframe: **scan ID → face scan**.
+   Didit runs document-fraud checks, passive liveness (photos, screens, masks, deepfakes) and face match.
+   Its signed webhook (`/api/kyd/didit/webhook`, X-Signature-V2) triggers our decision engine (`server/lib/risk.ts`):
+   hard rules (genuine doc, liveness ≥ 70, face match ≥ 70, 18+, not expired) → duplicate-ID guard (one-way HMAC of
+   document number) → **AI risk check** on the signals (no images, no document numbers), which can only escalate to
+   human review. Held cases appear at `/admin` for wallets in `ADMIN_WALLETS`.
+3. **Launch** (Pump.fun or LetsBonk) — one button:
+   metadata → IPFS · `create-tx` (PumpPortal builds create + dev buy; server pre-signs with a fresh mint key) ·
+   wallet approves · confirm · `lock-tx` (Streamflow lock of 100% of the dev wallet's balance, non-cancellable) ·
+   wallet approves · `verify-lock` (SDK-decoded: sender, mint, no cancel/top-up, unlock ≥ term, dev wallet empty) → listed.
+   Raydium LaunchLab / Meteora: create on the launchpad, then register with `POST /api/launches` (in-app coming).
+
+## Setup checklist
+| Variable | What for |
+|---|---|
+| `DIDIT_API_KEY` | Didit console → API keys (500 free verifications/month) |
+| `DIDIT_WORKFLOW_ID` | Run `DIDIT_API_KEY=… npm run didit:setup` once, or create a KYC workflow in the console (ID + passive liveness + face match + IP) |
+| `DIDIT_WEBHOOK_SECRET` | Didit console → Webhooks → add `https://<your-domain>/api/kyd/didit/webhook`, copy the secret |
+| `PINATA_JWT` | Pinata → API keys (Pump.fun metadata on IPFS). LetsBonk needs nothing. |
+| `ADMIN_WALLETS` | Comma-separated wallets that can approve held verifications at `/admin` |
+| `HELIUS_API_KEY` | Reliable RPC for launches + fee-claim history (strongly recommended) |
+| `ANTHROPIC_API_KEY` | AI risk check on verifications + AI project summaries |
 
 ## Background jobs (`server/jobs.ts`)
 | Job | Every | Needs |
@@ -47,7 +62,6 @@ npm run dev                      # UI on :5173, proxies /api to :8787
 dashboard to switch on fee tracking and AI.
 
 ## Not built yet
-- In-app token creation per launchpad (today the dev creates on the launchpad, then registers the mint)
-- A real KYC provider adapter (mock provider is on for staging via `ALLOW_MOCK_KYD`)
+- In-app creation for Raydium LaunchLab and Meteora DBC
 - Proof of X / GitHub account ownership (fields exist, verification flow pending)
 - Image upload storage

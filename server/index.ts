@@ -9,18 +9,25 @@ import { z } from "zod";
 import { env } from "./env";
 import { migrate, sql } from "./db";
 import { createNonce, endSession, requireWallet, sessionWallet, signInMessage, startSession, verifySignIn } from "./lib/auth";
-import { applyResult, startVerification, verifyWebhookSignature } from "./lib/kyd";
+import { adminDecide, kydStatus, startVerification, syncFromDidit } from "./lib/kyd";
+import { verifyDiditWebhook } from "./lib/didit";
+import { IN_APP_LAUNCHPADS, buildCreateTx, buildLockTx, sendSigned, signatureStatus, uploadMetadata } from "./lib/launch";
 import { getDev, getToken, listDevsByIds, listTokens, tokensByDev } from "./lib/views";
 import { tokenSupply } from "./lib/solana";
 import { confirmLock, startJobs } from "./jobs";
 import { seedDemo } from "./seed";
 import { LAUNCHPADS } from "../src/lib/mock";
 
-type Vars = { Variables: { wallet: string } };
+type Vars = { Variables: { wallet: string; devId: string } };
 const app = new Hono<Vars>();
 const api = new Hono<Vars>();
 
-app.use("*", secureHeaders({ contentSecurityPolicy: undefined, crossOriginEmbedderPolicy: false }));
+app.use("*", secureHeaders({ contentSecurityPolicy: undefined, crossOriginEmbedderPolicy: false, crossOriginOpenerPolicy: "same-origin-allow-popups" }));
+// The ID + face scan runs in an iframe from verify.didit.me and needs camera access.
+app.use("*", async (c, next) => {
+  await next();
+  c.header("Permissions-Policy", 'camera=(self "https://verify.didit.me"), microphone=(self "https://verify.didit.me"), fullscreen=(self "https://verify.didit.me")');
+});
 
 // --- tiny per-IP rate limiter for write endpoints
 const hits = new Map<string, { n: number; reset: number }>();
@@ -83,7 +90,11 @@ api.get("/me", async (c) => {
   if (!wallet) return c.json({ wallet: null, dev: null });
   const [dev] = await sql`
     select p.dev_id, p.alias, p.disclosure, k.status from dev_profiles p join dev_kyc_private k using (dev_id) where p.wallet = ${wallet}`;
-  return c.json({ wallet, dev: dev ? { id: dev.dev_id, alias: dev.alias, disclosure: dev.disclosure, status: dev.status } : null });
+  return c.json({
+    wallet,
+    isAdmin: env.adminWallets.includes(wallet),
+    dev: dev ? { id: dev.dev_id, alias: dev.alias, disclosure: dev.disclosure, status: dev.status } : null,
+  });
 });
 
 // ------------------------------------------------------------------ getting doxed
@@ -103,21 +114,43 @@ api.post("/kyd/start", limit(10, 60_000), requireWallet, async (c) => {
   }
 });
 
-api.post("/kyd/webhook", async (c) => {
+api.get("/kyd/status", requireWallet, async (c) => c.json(await kydStatus(c.get("wallet"))));
+
+/** Didit → us. Signature-checked, deduplicated, then the decision is re-fetched from Didit (source of truth). */
+api.post("/kyd/didit/webhook", async (c) => {
   const raw = await c.req.text();
-  if (!verifyWebhookSignature(raw, c.req.header("x-doxed-signature"))) return c.json({ error: "Bad signature" }, 401);
-  const body = z
-    .object({
-      applicantId: z.string(),
-      status: z.enum(["approved", "rejected"]),
-      checks: z.object({ identity: z.boolean().optional(), liveness: z.boolean().optional(), screening: z.boolean().optional() }),
-      legalName: z.string().optional(),
-      dateOfBirth: z.string().optional(),
-      country: z.string().optional(),
-    })
-    .safeParse(JSON.parse(raw));
-  if (!body.success) return c.json({ error: "Invalid payload" }, 400);
-  await applyResult(body.data);
+  if (!verifyDiditWebhook(raw, (h) => c.req.header(h))) return c.json({ error: "Bad signature" }, 401);
+  const body = JSON.parse(raw) as { event_id?: string; session_id?: string; vendor_data?: string };
+  if (body.event_id) {
+    const fresh = await sql`insert into kyd_webhook_events (event_id) values (${body.event_id}) on conflict do nothing returning event_id`;
+    if (!fresh.length) return c.json({ ok: true, duplicate: true });
+  }
+  const [row] = await sql`select dev_id from dev_kyc_private where session_id = ${body.session_id ?? ""}
+                          or dev_id::text = ${body.vendor_data ?? ""} limit 1`;
+  if (row) syncFromDidit(row.dev_id).catch((e) => console.error("[kyd] webhook sync", e.message));
+  return c.json({ ok: true });
+});
+
+// ------------------------------------------------------------------ admin review queue
+const requireAdmin = async (c: any, next: any) => {
+  if (!env.adminWallets.includes(c.get("wallet"))) return c.json({ error: "Admins only." }, 403);
+  await next();
+};
+api.get("/admin/reviews", requireWallet, requireAdmin, async (c) => {
+  const rows = await sql`
+    select p.dev_id, p.alias, p.wallet, k.status, k.doc_type, k.country, k.signals, k.ai_review, k.session_id, k.updated_at
+    from dev_kyc_private k join dev_profiles p using (dev_id)
+    where k.status in ('review', 'rejected', 'in_progress') order by (k.status = 'review') desc, k.updated_at desc limit 100`;
+  return c.json(rows);
+});
+api.post("/admin/reviews/:devId", requireWallet, requireAdmin, async (c) => {
+  const body = z.object({ approve: z.boolean() }).safeParse(await c.req.json().catch(() => ({})));
+  if (!body.success) return c.json({ error: "Invalid request" }, 400);
+  try {
+    await adminDecide(c.req.param("devId")!, body.data.approve, c.get("wallet"));
+  } catch (e) {
+    return c.json({ error: (e as Error).message }, 400);
+  }
   return c.json({ ok: true });
 });
 
@@ -147,6 +180,120 @@ api.patch("/me/profile", requireWallet, async (c) => {
 });
 
 // ------------------------------------------------------------------ launches
+const requireDoxed = async (c: any, next: any) => {
+  const [d] = await sql`select p.dev_id from dev_profiles p join dev_kyc_private k using (dev_id)
+                        where p.wallet = ${c.get("wallet")} and k.status = 'approved' and not p.flagged`;
+  if (!d) return c.json({ error: "Get doxed before launching." }, 403);
+  c.set("devId", d.dev_id);
+  await next();
+};
+
+api.get("/launch/config", (c) =>
+  c.json({ inApp: IN_APP_LAUNCHPADS, pumpReady: !!env.pinataJwt, minDevBuySol: 0.01, minLockMonths: 12 }),
+);
+
+/** Step 1: image + details → IPFS metadata. */
+api.post("/launch/metadata", limit(10, 60_000), requireWallet, requireDoxed, async (c) => {
+  const form = await c.req.parseBody();
+  const image = form.image;
+  if (!(image instanceof File)) return c.json({ error: "Add a token image." }, 400);
+  if (image.size > 2_000_000) return c.json({ error: "Image must be under 2 MB." }, 400);
+  if (!/^image\/(png|jpe?g|gif|webp)$/.test(image.type)) return c.json({ error: "Use a PNG, JPG, GIF or WebP image." }, 400);
+  const f = z
+    .object({
+      launchpad: z.enum(IN_APP_LAUNCHPADS),
+      name: z.string().trim().min(2).max(32),
+      symbol: z.string().trim().regex(/^[A-Za-z0-9]{2,10}$/),
+      description: z.string().max(280).optional(),
+      x: z.string().max(200).optional(),
+      website: z.string().max(200).optional(),
+    })
+    .safeParse(form);
+  if (!f.success) return c.json({ error: f.error.issues[0].message }, 400);
+  try {
+    const out = await uploadMetadata({ ...f.data, symbol: f.data.symbol.toUpperCase(), image, imageName: image.name || "token.png" });
+    return c.json(out);
+  } catch (e) {
+    return c.json({ error: (e as Error).message }, 502);
+  }
+});
+
+/** Step 2: build the create + dev-buy transaction (pre-signed by the new mint), and record a draft launch. */
+api.post("/launch/create-tx", limit(10, 60_000), requireWallet, requireDoxed, async (c) => {
+  const b = z
+    .object({
+      launchpad: z.enum(IN_APP_LAUNCHPADS, { message: "In-app launches support Pump.fun and LetsBonk for now." }),
+      name: z.string().trim().min(2, "Name is too short.").max(32),
+      symbol: z.string().trim().regex(/^[A-Za-z0-9]{2,10}$/, "Ticker must be 2–10 letters or numbers."),
+      description: z.string().max(280).optional(),
+      uri: z.string().url(),
+      image: z.string().url().optional(),
+      x: z.string().max(200).optional(),
+      website: z.string().max(200).optional(),
+      github: z.string().max(200).optional(),
+      devBuySol: z.number({ message: "Enter a dev buy in SOL." }).min(0.01, "Dev buy must be at least 0.01 SOL.").max(100, "Dev buy can be at most 100 SOL."),
+      lockMonths: z.number().int().min(12, "Locks are at least 12 months.").max(60, "Locks can be at most 60 months."),
+    })
+    .safeParse(await c.req.json().catch(() => ({})));
+  if (!b.success) return c.json({ error: b.error.issues[0].message }, 400);
+  const d = b.data;
+  try {
+    const { mint, tx } = await buildCreateTx({ wallet: c.get("wallet"), launchpad: d.launchpad, name: d.name, symbol: d.symbol.toUpperCase(), uri: d.uri, devBuySol: d.devBuySol });
+    await sql`
+      insert into launches (mint, dev_id, launchpad, name, symbol, description, image_url, metadata_uri, x_url, website_url, github_repo,
+                            dev_buy_sol, lock_months, stage)
+      values (${mint}, ${c.get("devId")}, ${d.launchpad}, ${d.name}, ${d.symbol.toUpperCase()}, ${d.description ?? null}, ${d.image ?? null}, ${d.uri},
+              ${d.x || null}, ${d.website || null}, ${d.github || null}, ${d.devBuySol}, ${d.lockMonths}, 'draft')`;
+    return c.json({ mint, tx });
+  } catch (e) {
+    return c.json({ error: (e as Error).message }, 502);
+  }
+});
+
+const ownLaunch = async (c: any) => {
+  const [l] = await sql`select l.*, p.wallet from launches l join dev_profiles p using (dev_id) where l.mint = ${c.req.param("mint")}`;
+  if (!l || l.wallet !== c.get("wallet")) return null;
+  return l;
+};
+
+api.get("/tx/:sig", async (c) => c.json(await signatureStatus(c.req.param("sig")!)));
+
+/** Fallback broadcaster for wallets without signAndSendTransaction. Only relays already-signed txs. */
+api.post("/tx/send", limit(20, 60_000), requireWallet, async (c) => {
+  const { tx } = (await c.req.json().catch(() => ({}))) as { tx?: string };
+  if (!tx || tx.length > 4000) return c.json({ error: "Invalid transaction" }, 400);
+  try {
+    return c.json({ signature: await sendSigned(tx) });
+  } catch (e) {
+    return c.json({ error: (e as Error).message }, 400);
+  }
+});
+
+/** Step 3: dev confirms the create landed → launch moves to pending_lock. */
+api.post("/launch/:mint/created", requireWallet, async (c) => {
+  const l = await ownLaunch(c);
+  if (!l) return c.json({ error: "Launch not found" }, 404);
+  const { signature } = (await c.req.json().catch(() => ({}))) as { signature?: string };
+  if (!signature) return c.json({ error: "Missing signature" }, 400);
+  const st = await signatureStatus(signature);
+  if (st.state !== "confirmed") return c.json({ error: st.state === "failed" ? `Launch transaction failed: ${st.error}` : "Not confirmed yet" }, 409);
+  await sql`update launches set stage = 'pending_lock', create_signature = ${signature} where mint = ${l.mint} and stage in ('draft','pending_lock')`;
+  return c.json({ ok: true });
+});
+
+/** Step 4: build the lock for 100% of the dev wallet's tokens. */
+api.post("/launch/:mint/lock-tx", limit(10, 60_000), requireWallet, async (c) => {
+  const l = await ownLaunch(c);
+  if (!l) return c.json({ error: "Launch not found" }, 404);
+  try {
+    const out = await buildLockTx({ wallet: l.wallet, mint: l.mint, months: l.lock_months, symbol: l.symbol });
+    await sql`update launches set lock_contract = ${out.lockId} where mint = ${l.mint}`;
+    return c.json(out);
+  } catch (e) {
+    return c.json({ error: (e as Error).message }, 400);
+  }
+});
+
 const LaunchBody = z.object({
   mint: wallet58,
   launchpad: z.enum(["pumpfun", "raydium", "bonk", "meteora"]),
@@ -188,6 +335,8 @@ api.post("/launches/:mint/verify-lock", limit(10, 60_000), requireWallet, async 
   const [l] = await sql`select l.lock_months, p.wallet from launches l join dev_profiles p using (dev_id) where l.mint = ${mint}`;
   if (!l) return c.json({ error: "Launch not found" }, 404);
   if (l.wallet !== c.get("wallet")) return c.json({ error: "Only the launching dev can verify this lock." }, 403);
+  const { signature } = (await c.req.json().catch(() => ({}))) as { signature?: string };
+  if (signature) await sql`update launches set lock_signature = ${signature} where mint = ${mint}`;
   const res = await confirmLock(mint, l.wallet, l.lock_months);
   return res.ok ? c.json({ ok: true, unlocksAt: res.unlocksAt, amount: res.amount }) : c.json({ ok: false, error: res.reason }, 400);
 });

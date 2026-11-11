@@ -18,6 +18,7 @@ export function getWallet(): Provider | null {
 
 export type Me = {
   wallet: string | null;
+  isAdmin?: boolean;
   dev: { id: string; alias: string; disclosure: "private" | "pseudonymous" | "public"; status: "pending" | "approved" | "rejected" } | null;
 };
 
@@ -67,11 +68,56 @@ export function useSignOut() {
   });
 }
 
-export async function startDoxing(alias: string, disclosure: "private" | "pseudonymous" | "public") {
+
+// ------------------------------------------------------------------ verification status
+export type KydState = { status: "none" | "pending" | "in_progress" | "approved" | "rejected" | "review"; url?: string; reasons?: string[] };
+let mockKyd: KydState = { status: "none" };
+
+export function useKydStatus(enabled: boolean, poll: boolean) {
+  return useQuery({
+    queryKey: ["kyd"],
+    queryFn: () => (USE_MOCK ? Promise.resolve(mockKyd) : http<KydState>("/kyd/status")),
+    enabled,
+    refetchInterval: poll ? 4000 : false,
+  });
+}
+
+export async function beginKyd(alias: string, disclosure: "private" | "pseudonymous" | "public"): Promise<KydState> {
   if (USE_MOCK) {
-    await new Promise((r) => setTimeout(r, 1200));
-    mockMe = { ...mockMe, dev: { id: "d-preview", alias, disclosure, status: "approved" } };
-    return { status: "approved" as const };
+    mockKyd = { status: "in_progress", url: "about:blank" };
+    setTimeout(() => {
+      mockKyd = { status: "approved" };
+      mockMe = { ...mockMe, dev: { id: "d-preview", alias, disclosure, status: "approved" } };
+    }, 5000);
+    return mockKyd;
   }
-  return http<{ status: "approved" | "pending"; redirectUrl?: string }>("/kyd/start", { method: "POST", json: { alias, disclosure } });
+  return http<KydState>("/kyd/start", { method: "POST", json: { alias, disclosure } });
+}
+
+// ------------------------------------------------------------------ transactions
+/** Has the connected wallet sign a server-built transaction, then sends it. Returns the signature. */
+export async function signAndSend(base64Tx: string): Promise<string> {
+  const [{ VersionedTransaction }, { Buffer }] = await Promise.all([import("@solana/web3.js"), import("buffer")]);
+  (globalThis as any).Buffer ??= Buffer;
+  const provider = getWallet() as any;
+  if (!provider) throw new Error("Wallet not connected.");
+  const tx = VersionedTransaction.deserialize(Uint8Array.from(Buffer.from(base64Tx, "base64")));
+  if (typeof provider.signAndSendTransaction === "function") {
+    const r = await provider.signAndSendTransaction(tx);
+    return typeof r === "string" ? r : r.signature;
+  }
+  const signed = await provider.signTransaction(tx);
+  const r = await http<{ signature: string }>("/tx/send", { method: "POST", json: { tx: Buffer.from(signed.serialize()).toString("base64") } });
+  return r.signature;
+}
+
+export async function waitForConfirmation(sig: string, timeoutMs = 90_000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const s = await http<{ state: "pending" | "confirmed" | "failed"; error?: string }>(`/tx/${sig}`);
+    if (s.state === "confirmed") return;
+    if (s.state === "failed") throw new Error(`Transaction failed on-chain: ${s.error}`);
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+  throw new Error("Transaction wasn't confirmed in time — check your wallet activity, then retry.");
 }

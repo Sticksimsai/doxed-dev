@@ -39,7 +39,11 @@ const PILLARS = [
 const FAQ = [
   {
     q: "Who can see a dev's identity documents?",
-    a: `Only ${APP_NAME}'s verification provider and a small compliance team. They are never published, and never shared with holders or launchpads.`,
+    a: `The ID and face scans are handled by our verification partner, Didit, and never stored on ${APP_NAME}'s servers. We keep only the result, the dev's name and date of birth privately, and a one-way fingerprint of the ID number so the same ID can't be used twice. Holders only ever see the badge and what the dev chooses to reveal.`,
+  },
+  {
+    q: "How do you catch fake IDs?",
+    a: "Every scan runs document-authenticity checks (tampering, templates, screen and print replays), a liveness check that catches photos, masks and deepfakes, and a face match between the selfie and the ID photo. An AI risk check then reviews all the signals together and sends anything unusual to a human.",
   },
   {
     q: "What happens if a dev breaks the rules?",
@@ -101,9 +105,9 @@ export function HowItWorksPage() {
           <div className="eyebrow">For devs</div>
           <ol className="mt-3 space-y-3 text-sm">
             {[
-              "Verify once (about 2 minutes) and pick what to make public.",
+              "Scan your ID and face once (about 2 minutes) and pick what to make public.",
               "Choose a launchpad and fill in your token details.",
-              `Launch — your dev tokens lock for ${LOCK_MIN_MONTHS}+ months automatically.`,
+              `Hit launch and approve twice — we create the token and lock your bag for ${LOCK_MIN_MONTHS}+ months.`,
             ].map((s, i) => (
               <li key={s} className="flex gap-3">
                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] bg-raised text-xs font-semibold">{i + 1}</span>

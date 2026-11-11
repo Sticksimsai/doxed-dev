@@ -19,8 +19,21 @@ export const env = {
   githubToken: e.GITHUB_TOKEN ?? "",
   /** Optional: read recent posts from the project's X account. */
   xBearer: e.X_BEARER_TOKEN ?? "",
-  /** Identity provider. "mock" auto-approves — never use it in production. */
-  kydProvider: (e.KYD_PROVIDER ?? "mock") as "mock" | "webhook",
+  /** Public base URL (Render sets RENDER_EXTERNAL_URL automatically). */
+  publicUrl: (e.PUBLIC_URL ?? e.RENDER_EXTERNAL_URL ?? "http://localhost:5173").replace(/\/$/, ""),
+  /** Identity provider: "didit" (ID scan + face scan) or "mock" (instant approve, staging only). */
+  kydProvider: (!e.KYD_PROVIDER || e.KYD_PROVIDER === "auto" ? (e.DIDIT_API_KEY ? "didit" : "mock") : e.KYD_PROVIDER) as "mock" | "didit" | "webhook",
+  diditApiKey: e.DIDIT_API_KEY ?? "",
+  diditWorkflowId: e.DIDIT_WORKFLOW_ID ?? "",
+  diditWebhookSecret: e.DIDIT_WEBHOOK_SECRET ?? "",
+  /** Keys the one-way hash used to stop one ID being used by several devs. */
+  idHashSecret: e.ID_HASH_SECRET ?? e.SESSION_SECRET ?? "dev-only-id-hash",
+  /** Wallets allowed to use /admin (comma separated). */
+  adminWallets: (e.ADMIN_WALLETS ?? "").split(",").map((s) => s.trim()).filter(Boolean),
+  /** Pinata JWT for Pump.fun metadata (IPFS). LetsBonk uses its own free uploader. */
+  pinataJwt: e.PINATA_JWT ?? "",
+  /** Priority fee (SOL) for create transactions. */
+  priorityFeeSol: Number(e.PRIORITY_FEE_SOL ?? 0.0005),
   /** Lets the mock provider run in production for a staging/demo deploy. Remove once a real provider is connected. */
   allowMockKyd: e.ALLOW_MOCK_KYD === "true",
   kydVerifyUrl: e.KYD_VERIFY_URL ?? "",

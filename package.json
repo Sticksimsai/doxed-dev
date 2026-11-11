@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && tsc -p tsconfig.server.json && vite build",
     "build:preview": "vite build --mode preview",
     "start": "tsx server/index.ts",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.server.json",
+    "didit:setup": "tsx server/didit-setup.ts"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
@@ -16,9 +17,13 @@
     "@fontsource-variable/pixelify-sans": "^5.3.0",
     "@fontsource/silkscreen": "^5.3.0",
     "@hono/node-server": "^2.1.6",
+    "@solana/web3.js": "^1.99.0",
+    "@streamflow/stream": "^13.4.0",
     "@tanstack/react-query": "^5.107.1",
     "@tanstack/react-router": "^1.170.46",
+    "bn.js": "^5.2.5",
     "bs58": "^6.0.0",
+    "buffer": "^6.0.3",
     "clsx": "^2.1.1",
     "hono": "^4.13.17",
     "jose": "^6.2.17",
@@ -33,6 +38,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.5",
+    "@types/bn.js": "^5.2.0",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",

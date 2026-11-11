@@ -16,13 +16,26 @@ function WalletButton() {
       </button>
     );
   return (
-    <button
-      onClick={() => signIn.mutate(undefined, { onError: (e) => alert((e as Error).message) })}
-      disabled={signIn.isPending}
-      className="btn-ghost !px-3 !py-1.5 text-[13px]"
-    >
-      {signIn.isPending ? "Signing…" : "Connect"}
-    </button>
+    <span className="relative inline-flex">
+      <button onClick={() => signIn.mutate()} disabled={signIn.isPending} className="btn-ghost !px-3 !py-1.5 text-[13px]">
+        {signIn.isPending ? "Signing…" : "Connect"}
+      </button>
+      {signIn.error && (
+        <span className="absolute top-full right-0 z-40 mt-2 w-64 rounded-md border border-border-strong bg-[#0b0b0b]/95 p-2 text-xs text-danger">
+          {(signIn.error as Error).message}
+        </span>
+      )}
+    </span>
+  );
+}
+
+function AdminLink() {
+  const { data: me } = useMe();
+  if (!me?.isAdmin) return null;
+  return (
+    <Link to="/admin" className={navBase} activeProps={{ className: navActive }}>
+      Review
+    </Link>
   );
 }
 import { useEffect, useState } from "react";
@@ -86,6 +99,7 @@ function NavLinks() {
       <Link to="/how-it-works" className={navBase} activeProps={{ className: navActive }}>
         How it works
       </Link>
+      <AdminLink />
     </>
   );
 }

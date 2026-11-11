@@ -19,9 +19,9 @@ services:
         generateValue: true
       - key: SEED_DEMO
         value: "true"
-      - key: KYD_PROVIDER
-        value: mock
-      - key: ALLOW_MOCK_KYD # staging only — remove when a real KYC provider is connected
+      - key: KYD_PROVIDER # auto = Didit when DIDIT_API_KEY is set, otherwise instant mock approval
+        value: auto
+      - key: ALLOW_MOCK_KYD # lets the mock run before Didit is connected; ignored once Didit keys are set
         value: "true"
       - key: HELIUS_API_KEY
         sync: false
