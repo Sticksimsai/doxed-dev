@@ -5,7 +5,7 @@ import { fetchAsset, toMarketRow } from "./lib/market";
 import { devFeeClaims } from "./lib/solana";
 import { verifyLock } from "./lib/launch";
 import { syncFromDidit } from "./lib/kyd";
-import { pageText, recentPosts, reviewRepo, summariseProject } from "./lib/ai";
+import { aiReady, pageText, recentPosts, reviewRepo, summariseProject } from "./lib/ai";
 import { parseRepo, repoFacts } from "./lib/github";
 
 const log = (job: string, ...a: unknown[]) => console.log(`[job:${job}]`, ...a);
@@ -47,7 +47,7 @@ export async function refreshFees() {
 }
 
 export async function refreshAi(limit = 3) {
-  if (!env.anthropicKey) return;
+  if (!aiReady()) return;
   const due = await sql`
     select l.*, d.disclosure from launches l join dev_public_profiles d using (dev_id)
     left join ai_summaries a using (mint)
@@ -149,5 +149,5 @@ export function startJobs() {
   every("fees", 15 * 60_000, refreshFees);
   every("ai", 10 * 60_000, () => refreshAi());
   if (!env.heliusKey) log("fees", "HELIUS_API_KEY missing — fee claims disabled, public RPC used for lock checks");
-  if (!env.anthropicKey) log("ai", "ANTHROPIC_API_KEY missing — AI summaries disabled");
+  if (!aiReady()) log("ai", "no AI key (ANTHROPIC_API_KEY or OPENROUTER_API_KEY) — AI summaries disabled");
 }

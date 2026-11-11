@@ -19,6 +19,8 @@ import { tokenSupply } from "./lib/solana";
 import { confirmLock, startJobs } from "./jobs";
 import { seedDemo } from "./seed";
 import { LAUNCHPADS } from "../src/lib/mock";
+import { bootstrapIntegrations, clearDemo, setupChecks } from "./lib/setup";
+import { aiReady } from "./lib/ai";
 
 type Vars = { Variables: { wallet: string; devId: string } };
 const app = new Hono<Vars>();
@@ -49,7 +51,7 @@ const wallet58 = z.string().regex(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/, "Not a Solana
 // ------------------------------------------------------------------ public reads
 api.get("/health", async (c) => {
   await sql`select 1`;
-  return c.json({ ok: true, jobs: env.jobs, ai: !!env.anthropicKey, helius: !!env.heliusKey, kyd: env.kydProvider, mockKyd: env.kydProvider === "mock" });
+  return c.json({ ok: true, jobs: env.jobs, ai: aiReady(), builder: !!env.openrouterKey, pump: !!env.pinataJwt, helius: !!env.heliusKey, kyd: env.kydProvider, mockKyd: env.kydProvider === "mock" });
 });
 api.get("/launchpads", (c) => c.json(LAUNCHPADS));
 api.get("/tokens", async (c) => {
@@ -139,6 +141,11 @@ const requireAdmin = async (c: any, next: any) => {
   if (!env.adminWallets.includes(c.get("wallet"))) return c.json({ error: "Admins only." }, 403);
   await next();
 };
+api.get("/admin/setup", requireWallet, requireAdmin, async (c) => c.json(await setupChecks()));
+api.post("/admin/demo/clear", requireWallet, requireAdmin, async (c) => {
+  await clearDemo();
+  return c.json({ ok: true });
+});
 api.get("/admin/reviews", requireWallet, requireAdmin, async (c) => {
   const rows = await sql`
     select p.dev_id, p.alias, p.wallet, k.status, k.doc_type, k.country, k.signals, k.ai_review, k.session_id, k.updated_at
@@ -395,6 +402,7 @@ if (existsSync(dist)) {
 
 // ------------------------------------------------------------------ boot
 await migrate();
+await bootstrapIntegrations();
 if (env.seedDemo) await seedDemo();
 startJobs();
 serve({ fetch: app.fetch, port: env.port }, (i) => console.log(`[doxed] listening on :${i.port}`));

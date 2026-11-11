@@ -6,6 +6,8 @@ import { DEVS, TOKENS } from "../src/lib/mock";
 export async function seedDemo() {
   const [{ n }] = await sql<{ n: number }[]>`select count(*)::int as n from launches`;
   if (n > 0) return;
+  const [cleared] = await sql<{ value: string }[]>`select value from app_settings where key = 'demo_cleared'`;
+  if (cleared) return; // an admin removed the demo data — don't bring it back
   console.log("[seed] inserting demo data");
   const idMap = new Map<string, string>();
   await sql.begin(async (tx) => {

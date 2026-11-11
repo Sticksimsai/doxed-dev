@@ -5,6 +5,7 @@
 //     and can escalate to human review. It can never approve what the rules rejected or sent to review.
 import { createHmac } from "node:crypto";
 import { env } from "../env";
+import { aiJson, aiReady } from "./ai";
 import type { DiditDecision } from "./didit";
 
 export type Outcome = "approved" | "rejected" | "review";
@@ -82,7 +83,7 @@ export async function evaluate(d: DiditDecision, isDuplicate: (hash: string) => 
 
   // AI risk check on the signals (only when the rules would otherwise approve or review).
   let ai: AiReview | null = null;
-  if (outcome !== "rejected" && env.anthropicKey) {
+  if (outcome !== "rejected" && aiReady()) {
     try {
       ai = await aiRiskCheck(signals);
       if (outcome === "approved" && (ai.risk === "high" || ai.recommendation !== "approve")) {
@@ -106,16 +107,7 @@ You receive ONLY machine signals from an ID + liveness + face-match provider (no
 Look for signs of fake or altered documents, screen/print replays, deepfakes, mismatched countries,
 VPN/Tor/hosting IPs, borderline scores, or contradictory signals. Be conservative but don't invent problems.
 Reply with ONLY JSON: {"risk":"low"|"medium"|"high","recommendation":"approve"|"review"|"reject","reasons":[short strings, max 3]}`;
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "content-type": "application/json", "x-api-key": env.anthropicKey, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: env.aiModel, max_tokens: 400, system, messages: [{ role: "user", content: JSON.stringify(signals) }] }),
-  });
-  if (!res.ok) throw new Error(`anthropic ${res.status}`);
-  const json = (await res.json()) as { content: { type: string; text?: string }[] };
-  const m = (json.content.find((c) => c.type === "text")?.text ?? "").match(/\{[\s\S]*\}/);
-  if (!m) throw new Error("no JSON");
-  const out = JSON.parse(m[0]) as AiReview;
+  const out = await aiJson<AiReview>(system, JSON.stringify(signals), 400);
   if (!["low", "medium", "high"].includes(out.risk)) out.risk = "medium";
   if (!["approve", "review", "reject"].includes(out.recommendation)) out.recommendation = "review";
   out.reasons = (out.reasons ?? []).slice(0, 3).map(String);

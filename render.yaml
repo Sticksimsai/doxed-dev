@@ -23,14 +23,42 @@ services:
         value: auto
       - key: ALLOW_MOCK_KYD # lets the mock run before Didit is connected; ignored once Didit keys are set
         value: "true"
-      - key: HELIUS_API_KEY
+      # ---- secrets: paste in Render → doxed-dev → Environment (placeholders count as "not set")
+      - key: ADMIN_WALLETS # your Solana wallet(s), comma separated — unlocks /admin
         sync: false
-      - key: ANTHROPIC_API_KEY
+      - key: OPENROUTER_API_KEY # Builder API master key; also powers AI summaries if no Anthropic key
         sync: false
-      - key: GITHUB_TOKEN
+      - key: HELIUS_API_KEY # Solana RPC + fee-claim history
         sync: false
-      - key: X_BEARER_TOKEN
+      - key: DIDIT_API_KEY # ID scan + face scan
         sync: false
+      - key: DIDIT_WEBHOOK_SECRET
+        sync: false
+      - key: PINATA_JWT # Pump.fun metadata uploads
+        sync: false
+      - key: TREASURY_WALLET # where launch fees go
+        sync: false
+      - key: ANTHROPIC_API_KEY # optional — AI runs on the Builder key without it
+        sync: false
+      - key: GITHUB_TOKEN # optional — higher limits for repo reviews
+        sync: false
+      - key: X_BEARER_TOKEN # optional — recent X posts in summaries
+        sync: false
+      # ---- settings with sensible defaults
+      - key: ID_HASH_SECRET # keys the duplicate-ID guard; never change once live
+        generateValue: true
+      - key: LAUNCH_FEE_SOL
+        value: "0"
+      - key: BUILDER_MONTHLY_CREDIT_USD
+        value: "100"
+      - key: BUILDER_RPM
+        value: "60"
+      - key: BUILDER_MAX_KEYS
+        value: "5"
+      - key: BUILDER_MAX_TOKENS
+        value: "8192"
+      - key: RUN_JOBS
+        value: "true"
 
 databases:
   - name: doxed-db

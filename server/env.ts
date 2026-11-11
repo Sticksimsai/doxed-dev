@@ -2,7 +2,12 @@
 // keys are missing are skipped (and logged) instead of crashing the server.
 import { randomBytes } from "node:crypto";
 
-const e = process.env;
+// Blank values and "paste-here" placeholders count as "not set", so the Render
+// dashboard can list every key up front without switching half-configured features on.
+const PLACEHOLDER = /^(|-|paste[-_ ]?here|paste[-_ ]?me|changeme|change-me|todo|x+)$/i;
+const e: Record<string, string | undefined> = Object.fromEntries(
+  Object.entries(process.env).map(([k, v]) => [k, v === undefined || PLACEHOLDER.test(v.trim()) ? undefined : v.trim()]),
+);
 
 export const env = {
   port: Number(e.PORT ?? 8787),
@@ -14,7 +19,8 @@ export const env = {
   heliusKey: e.HELIUS_API_KEY ?? "",
   /** AI summaries + repo reviews. */
   anthropicKey: e.ANTHROPIC_API_KEY ?? "",
-  aiModel: e.AI_MODEL ?? "claude-sonnet-5-5",
+  /** Model for summaries / repo reviews / ID risk check. Anthropic id, or a provider/model id when running on the Builder key. Blank = auto. */
+  aiModel: e.AI_MODEL ?? "",
   /** Optional: higher GitHub rate limits for repo reviews. */
   githubToken: e.GITHUB_TOKEN ?? "",
   /** Optional: read recent posts from the project's X account. */
@@ -24,6 +30,7 @@ export const env = {
   /** Identity provider: "didit" (ID scan + face scan) or "mock" (instant approve, staging only). */
   kydProvider: (!e.KYD_PROVIDER || e.KYD_PROVIDER === "auto" ? (e.DIDIT_API_KEY ? "didit" : "mock") : e.KYD_PROVIDER) as "mock" | "didit" | "webhook",
   diditApiKey: e.DIDIT_API_KEY ?? "",
+  /** Optional — created automatically on first boot and remembered in the database. */
   diditWorkflowId: e.DIDIT_WORKFLOW_ID ?? "",
   diditWebhookSecret: e.DIDIT_WEBHOOK_SECRET ?? "",
   /** Keys the one-way hash used to stop one ID being used by several devs. */

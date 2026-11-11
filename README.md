@@ -85,3 +85,20 @@ upstream names from errors; `/v1/models` is re-shaped to a neutral schema. The o
 embedded ID-scan page — turn on white-label branding and a custom domain in the verification provider's console,
 then set `KYD_FRAME_ORIGIN`. Launchpad names (Pump.fun, LetsBonk…) are shown on purpose — devs pick them. Block-explorer
 links are kept so anyone can verify locks and fee claims on-chain.
+
+## Going live checklist
+
+Open **/admin → Setup** (needs your wallet in `ADMIN_WALLETS`). It live-checks every connection and shows which keys are missing.
+Paste keys in Render → doxed-dev → Environment; blank or `paste-here` values count as "not set".
+
+| Key | Unlocks |
+| --- | --- |
+| `ADMIN_WALLETS` | /admin — setup checklist + review queue |
+| `OPENROUTER_API_KEY` | Builder API, and AI summaries / repo reviews / fake-ID check when there's no Anthropic key |
+| `HELIUS_API_KEY` | Fee-claim history, reliable lock checks + transaction sending |
+| `DIDIT_API_KEY`, `DIDIT_WEBHOOK_SECRET` | Real ID scan → face scan (workflow is created automatically) |
+| `PINATA_JWT` | Pump.fun launches (LetsBonk works without it) |
+| `LAUNCH_FEE_SOL`, `TREASURY_WALLET` | Platform launch fee |
+| `ANTHROPIC_API_KEY`, `GITHUB_TOKEN`, `X_BEARER_TOKEN` | Optional |
+
+After real verification is on: set `ALLOW_MOCK_KYD=false`, `SEED_DEMO=false`, and press **Remove demo data** on the Setup page.

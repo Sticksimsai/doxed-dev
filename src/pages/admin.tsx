@@ -3,7 +3,7 @@ import { useState } from "react";
 import { http, USE_MOCK } from "@/lib/api";
 import { ago, cn, short } from "@/lib/format";
 import { useMe } from "@/lib/session";
-import { CheckCircle2, CircleAlert, XCircle } from "@/components/icons";
+import { CheckCircle2, CircleAlert, Copy, RefreshCw, XCircle } from "@/components/icons";
 
 type Review = {
   dev_id: string;
@@ -51,7 +51,8 @@ export function AdminPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-4">
-      <h1 className="font-display text-3xl font-semibold">Verification review</h1>
+      <SetupPanel />
+      <h1 className="pt-6 font-display text-3xl font-semibold">Verification review</h1>
       <p className="font-prose text-sm text-muted-foreground">
         Held and rejected verifications. Images stay with the verification provider — open the session in the verification console to see them.
       </p>
@@ -105,6 +106,93 @@ export function AdminPage() {
       ))}
     </div>
   );
+}
+
+type Check = {
+  id: string;
+  name: string;
+  purpose: string;
+  keys: { name: string; set: boolean; required: boolean }[];
+  status: "ok" | "missing" | "error" | "partial";
+  detail: string;
+};
+
+function SetupPanel() {
+  const qc = useQueryClient();
+  const { data, isFetching, refetch } = useQuery({
+    queryKey: ["admin-setup"],
+    queryFn: () => http<{ publicUrl: string; webhookUrl: string; checks: Check[] }>("/admin/setup"),
+  });
+  const [clearing, setClearing] = useState(false);
+  const ok = data?.checks.filter((c) => c.status === "ok").length ?? 0;
+  return (
+    <section className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl font-semibold">Setup</h1>
+          <p className="font-prose text-sm text-muted-foreground">
+            Live check of every connection. Keys are set in the hosting dashboard → Environment, then the server restarts on its own.
+          </p>
+        </div>
+        <button className="btn-ghost text-sm" onClick={() => refetch()} disabled={isFetching}>
+          <RefreshCw className={cn("h-3.5 w-3.5", isFetching && "animate-spin")} /> {isFetching ? "Checking…" : `Re-check · ${ok}/${data?.checks.length ?? "–"} ready`}
+        </button>
+      </div>
+      {data && (
+        <div className="card flex flex-wrap items-center gap-3 p-3 text-sm">
+          <span className="eyebrow">Verification webhook URL</span>
+          <code className="min-w-0 flex-1 break-all font-mono text-xs">{data.webhookUrl}</code>
+          <button className="btn-ghost !px-2 !py-1 text-xs" onClick={() => navigator.clipboard?.writeText(data.webhookUrl)}>
+            <Copy className="h-3 w-3" /> Copy
+          </button>
+        </div>
+      )}
+      <div className="grid gap-2 md:grid-cols-2">
+        {data?.checks.map((c) => (
+          <div key={c.id} className="card p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="font-medium">{c.name}</div>
+                <div className="font-prose text-xs text-subtle">{c.purpose}</div>
+              </div>
+              <StatusChip s={c.status} />
+            </div>
+            <div className="font-prose mt-2 text-sm text-muted-foreground">{c.detail}</div>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {c.keys.map((k) => (
+                <span key={k.name} className={cn("chip font-mono text-[11px]", k.set ? "border-success/40 text-success" : k.required ? "border-danger/40 text-danger" : "border-dashed border-border-strong text-subtle")}>
+                  {k.set ? "✓" : "○"} {k.name}
+                </span>
+              ))}
+            </div>
+            {c.id === "demo" && c.status === "partial" && (
+              <button
+                className="btn-ghost mt-3 text-xs"
+                disabled={clearing}
+                onClick={async () => {
+                  if (!confirm("Remove all demo tokens and devs? This can't be undone.")) return;
+                  setClearing(true);
+                  try {
+                    await http("/admin/demo/clear", { method: "POST" });
+                    await qc.invalidateQueries();
+                  } finally {
+                    setClearing(false);
+                  }
+                }}
+              >
+                {clearing ? "Removing…" : "Remove demo data"}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function StatusChip({ s }: { s: Check["status"] }) {
+  const map = { ok: ["Connected", "border-success/50 text-success"], partial: ["Partial", "border-foreground/40 text-foreground"], missing: ["Not set", "border-border-strong text-subtle"], error: ["Error", "border-danger/50 text-danger"] } as const;
+  return <span className={cn("chip shrink-0 font-pixel text-[9px] uppercase", map[s][1])}>{map[s][0]}</span>;
 }
 
 function Signal({ label, ok, text }: { label: string; ok: boolean; text: string }) {

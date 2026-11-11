@@ -1,20 +1,62 @@
-// AI project summaries (from X + website + GitHub) and code reviews, via the Anthropic API.
+// AI project summaries (from X + website + GitHub), code reviews and the shared AI call.
 import { env } from "../env";
 import type { RepoFacts } from "./github";
 
-async function claudeJson<T>(system: string, user: string): Promise<T> {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+// One AI call used by summaries, repo reviews and the ID risk check. Runs on the Anthropic key when
+// set, otherwise on the Builder master key (so one key is enough to switch every AI feature on).
+const OR_BASE = process.env.OPENROUTER_BASE_URL ?? "https://openrouter.ai/api/v1";
+
+export const aiReady = () => !!(env.anthropicKey || env.openrouterKey);
+export const aiProvider = () => (env.anthropicKey ? "anthropic" : env.openrouterKey ? "builder" : null);
+
+let orModel: string | null = null;
+/** Picks the newest Claude Sonnet on the Builder key (or AI_MODEL if it is a provider/model id). */
+export async function resolveModel(): Promise<string> {
+  if (env.anthropicKey) return env.aiModel && !env.aiModel.includes("/") ? env.aiModel : "claude-sonnet-5-5";
+  if (env.aiModel.includes("/")) return env.aiModel;
+  if (orModel) return orModel;
+  try {
+    const r = await fetch(`${OR_BASE}/models`, { signal: AbortSignal.timeout(10_000) });
+    const { data } = (await r.json()) as { data: { id: string; created?: number }[] };
+    const pick = (p: RegExp) => data.filter((m) => p.test(m.id) && !/:/.test(m.id)).sort((a, b) => (b.created ?? 0) - (a.created ?? 0))[0]?.id;
+    orModel = pick(/^anthropic\/claude-sonnet/) ?? pick(/^anthropic\/claude/) ?? pick(/^openai\/gpt-5/) ?? "openai/gpt-5-mini";
+  } catch {
+    return "openai/gpt-5-mini"; // don't cache a failed lookup
+  }
+  return orModel;
+}
+
+export async function aiText(system: string, user: string, maxTokens = 1500): Promise<string> {
+  const model = await resolveModel();
+  if (env.anthropicKey) {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": env.anthropicKey, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model, max_tokens: maxTokens, system, messages: [{ role: "user", content: user }] }),
+      signal: AbortSignal.timeout(90_000),
+    });
+    if (!res.ok) throw new Error(`ai ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    const json = (await res.json()) as { content: { type: string; text?: string }[] };
+    return json.content.find((c) => c.type === "text")?.text ?? "";
+  }
+  if (!env.openrouterKey) throw new Error("AI is not configured");
+  const res = await fetch(`${OR_BASE}/chat/completions`, {
     method: "POST",
-    headers: { "content-type": "application/json", "x-api-key": env.anthropicKey, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: env.aiModel, max_tokens: 1500, system, messages: [{ role: "user", content: user }] }),
+    headers: { "content-type": "application/json", authorization: `Bearer ${env.openrouterKey}`, "x-title": "Doxed Dev (internal)" },
+    body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: "system", content: system }, { role: "user", content: user }] }),
+    signal: AbortSignal.timeout(90_000),
   });
-  if (!res.ok) throw new Error(`anthropic ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  const json = (await res.json()) as { content: { type: string; text?: string }[] };
-  const text = json.content.find((c) => c.type === "text")?.text ?? "";
-  const m = text.match(/\{[\s\S]*\}/);
+  if (!res.ok) throw new Error(`ai ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const json = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  return json.choices?.[0]?.message?.content ?? "";
+}
+
+export async function aiJson<T>(system: string, user: string, maxTokens = 1500): Promise<T> {
+  const m = (await aiText(system, user, maxTokens)).match(/\{[\s\S]*\}/);
   if (!m) throw new Error("AI returned no JSON");
   return JSON.parse(m[0]) as T;
 }
+const claudeJson = aiJson;
 
 /** Fetch a web page and reduce it to readable text. */
 export async function pageText(url: string): Promise<string> {
