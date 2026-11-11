@@ -17,11 +17,12 @@ import {
   Users,
   Zap,
   XCircle,
-} from "lucide-react";
+} from "@/components/icons";
 import { useState, type ReactNode } from "react";
+import { Cursor, Typewriter } from "@/components/code-fx";
 import { devById, getToken, launchpadById } from "@/lib/api";
 import { ago, cn, compact, date, deltaClass, int, pct, short, sol, usd } from "@/lib/format";
-import type { Dev, FindingStatus, Token } from "@/lib/types";
+import type { Dev, Token } from "@/lib/types";
 import {
   CopyButton,
   DISCLOSURE,
@@ -66,16 +67,16 @@ export function TokenPage() {
         <TokenIcon t={t} size={48} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-3xl font-bold tracking-tight">{t.name}</h1>
+            <h1 className="font-display text-3xl font-semibold md:text-4xl">{t.name}</h1>
             <KydMark dev={dev} size={22} />
             <span className="rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">${t.symbol}</span>
-            <span className="rounded-md bg-primary/15 px-2 py-0.5 text-xs font-medium text-primary">KYD · {DISCLOSURE[dev.disclosure].short}</span>
+            <span className="rounded-[4px] border border-foreground/40 bg-foreground/10 px-1.5 py-0.5 text-xs text-foreground">DOXED · {DISCLOSURE[dev.disclosure].short}</span>
             <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: lp.color }} />
+              <span className="h-1.5 w-1.5 bg-current" />
               {lp.name}
             </span>
             {t.stage === "bonding" ? (
-              <span className="rounded-md bg-warning/15 px-2 py-0.5 text-xs font-medium text-warning">Bonding {t.bondingPct}%</span>
+              <span className="rounded-[4px] border border-dashed border-border-strong px-1.5 py-0.5 text-xs text-foreground">Bonding {t.bondingPct}%</span>
             ) : (
               <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-muted-foreground">Graduated · {lp.graduatesTo}</span>
             )}
@@ -112,7 +113,7 @@ export function TokenPage() {
             )}
           </div>
         </div>
-        <a href="#" className="inline-flex items-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[0_6px_20px_-6px_var(--primary)] hover:brightness-110">
+        <a href="#" className="btn-primary">
           Trade on {lp.name} ↗
         </a>
       </header>
@@ -123,7 +124,7 @@ export function TokenPage() {
         <Kpi icon={<Droplets className="h-4 w-4" />} label="Liquidity" value={usd(t.liquidity)} />
         <Kpi icon={<Users className="h-4 w-4" />} label="Holders" value={int(t.holders)} />
         <a href="#dev" className="contents">
-          <Kpi variant="cyber" icon={<ShieldCheck className="h-5 w-5" />} label="Dev verified" value={DISCLOSURE[dev.disclosure].short} sub={`KYD checked ${ago(dev.verifiedAt)} ago`} />
+          <Kpi variant="cyber" icon={<ShieldCheck className="h-5 w-5" />} label="Dev doxed" value={DISCLOSURE[dev.disclosure].short} sub={`checked ${ago(dev.verifiedAt)} ago`} />
         </a>
         <a href="#fees" className="contents">
           <Kpi variant="cyber" icon={<Coins className="h-5 w-5" />} label="Fees claimed" value={`${claimed.toFixed(2)} SOL`} sub={`${t.feeClaims.length} claims`} />
@@ -210,11 +211,13 @@ function AiSummaryCard({ t }: { t: Token }) {
         </span>
       }
     >
-      <p className="text-[15px] leading-relaxed">{ai.tldr}</p>
+      <p className="font-prose text-[15px] leading-relaxed">
+        <Typewriter text={ai.tldr} />
+      </p>
       <ul className="mt-4 space-y-2">
         {ai.points.map((p) => (
-          <li key={p} className="flex gap-2.5 text-sm text-muted-foreground">
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary/80" />
+          <li key={p} className="font-prose flex gap-2.5 text-sm text-muted-foreground">
+            <span className="mt-[3px] font-mono text-[11px] text-subtle">→</span>
             {p}
           </li>
         ))}
@@ -226,7 +229,7 @@ function AiSummaryCard({ t }: { t: Token }) {
           <ol className="relative space-y-3 border-l border-border-strong pl-4">
             {ai.recent.map((r) => (
               <li key={r.text} className="text-sm">
-                <span className="absolute -left-[4.5px] mt-1.5 h-2 w-2 rounded-full bg-primary/70" />
+                <span className="absolute -left-[4.5px] mt-1.5 h-2 w-2 bg-foreground" />
                 <span className="text-muted-foreground">{r.text}</span>
                 <span className="ml-2 text-[11px] text-subtle">{ago(r.at)} ago</span>
               </li>
@@ -236,8 +239,8 @@ function AiSummaryCard({ t }: { t: Token }) {
       )}
 
       {ai.watchouts.length > 0 && (
-        <div className="mt-5 rounded-lg border border-warning/25 bg-warning/5 p-3">
-          <div className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-warning">
+        <div className="mt-5 rounded-md border border-dashed border-border-strong p-3">
+          <div className="mb-1.5 flex items-center gap-1.5 font-pixel text-[10px] uppercase text-foreground">
             <AlertTriangle className="h-3.5 w-3.5" /> Worth knowing
           </div>
           <ul className="space-y-1 text-sm text-muted-foreground">
@@ -262,11 +265,6 @@ function AiSummaryCard({ t }: { t: Token }) {
   );
 }
 
-const STATUS: Record<FindingStatus, { icon: typeof CheckCircle2; c: string }> = {
-  good: { icon: CheckCircle2, c: "text-success" },
-  warn: { icon: CircleAlert, c: "text-warning" },
-  bad: { icon: XCircle, c: "text-danger" },
-};
 
 function RepoCard({ t }: { t: Token }) {
   const r = t.repo;
@@ -279,7 +277,7 @@ function RepoCard({ t }: { t: Token }) {
         </p>
       </SectionCard>
     );
-  const scoreC = r.score >= 70 ? "var(--success)" : r.score >= 50 ? "var(--warning)" : "var(--danger)";
+  const scoreC = "var(--foreground)";
   return (
     <SectionCard
       id="code"
@@ -296,12 +294,12 @@ function RepoCard({ t }: { t: Token }) {
             <circle cx="18" cy="18" r="15.5" fill="none" stroke={scoreC} strokeWidth="3" strokeLinecap="round" strokeDasharray={`${(r.score / 100) * 97.4} 97.4`} />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="font-display text-2xl font-semibold">{r.score}</span>
+            <span className="font-mono text-2xl font-medium">{r.score}</span>
             <span className="text-[10px] text-subtle">/ 100</span>
           </div>
         </div>
         <div className="min-w-0 flex-1">
-          <a href={`https://github.com/${r.repo}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-mono text-sm text-primary hover:underline">
+          <a href={`https://github.com/${r.repo}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-mono text-sm text-foreground underline decoration-dotted underline-offset-4">
             {r.repo} <ExternalLink className="h-3 w-3" />
           </a>
           <p className="mt-1 text-sm text-muted-foreground">{r.verdict}</p>
@@ -314,34 +312,36 @@ function RepoCard({ t }: { t: Token }) {
         </div>
       </div>
 
-      <div className="mt-4 flex h-2 overflow-hidden rounded-full">
+      <div className="mt-4 flex h-2 overflow-hidden rounded-[4px]">
         {r.languages.map((l, i) => (
-          <div key={l.name} style={{ width: `${l.pct}%`, background: `oklch(0.72 0.14 ${150 + i * 70})` }} title={`${l.name} ${l.pct}%`} />
+          <div key={l.name} style={{ width: `${l.pct}%`, background: `rgb(255 255 255 / ${0.85 - i * 0.3})` }} title={`${l.name} ${l.pct}%`} />
         ))}
       </div>
       <div className="mt-1.5 flex flex-wrap gap-3 text-[11px] text-subtle">
         {r.languages.map((l, i) => (
           <span key={l.name} className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full" style={{ background: `oklch(0.72 0.14 ${150 + i * 70})` }} />
+            <span className="h-2 w-2" style={{ background: `rgb(255 255 255 / ${0.85 - i * 0.3})` }} />
             {l.name} {l.pct}%
           </span>
         ))}
       </div>
 
-      <ul className="mt-4 divide-y divide-border rounded-lg border border-border">
-        {r.findings.map((f) => {
-          const S = STATUS[f.status];
-          return (
-            <li key={f.label} className="flex gap-3 px-3 py-2.5">
-              <S.icon className={cn("mt-0.5 h-4 w-4 shrink-0", S.c)} />
-              <div>
-                <div className="text-sm font-medium">{f.label}</div>
-                <div className="text-sm text-muted-foreground">{f.detail}</div>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="scanline mt-4 rounded-md border border-border bg-black/50 p-3 font-mono text-[12.5px] leading-relaxed">
+        <div className="text-subtle">$ doxed scan {r.repo}</div>
+        {r.findings.map((f) => (
+          <div key={f.label} className="mt-1.5">
+            <span className={cn("mr-2", f.status === "good" ? "text-success" : f.status === "warn" ? "text-foreground" : "text-danger")}>
+              [{f.status === "good" ? "PASS" : f.status === "warn" ? "WARN" : "FAIL"}]
+            </span>
+            <span className="text-foreground">{f.label}</span>
+            <div className="font-prose pl-[3.4rem] text-muted-foreground">{f.detail}</div>
+          </div>
+        ))}
+        <div className="mt-2 text-subtle">
+          score: <span className="text-foreground">{r.score}/100</span>
+          <Cursor />
+        </div>
+      </div>
     </SectionCard>
   );
 }
@@ -366,7 +366,7 @@ function DevCard({ dev }: { dev: Dev }) {
     ["screening", "Sanctions screening"],
   ];
   return (
-    <SectionCard id="dev" className="scroll-mt-20" title="Know your dev" subtitle="Privately verified by us" icon={<BadgeCheck />}>
+    <SectionCard id="dev" className="scroll-mt-20" title="Doxed dev" subtitle="Identity verified privately by us" icon={<BadgeCheck />}>
       <div className="flex items-center justify-between gap-2">
         <div>
           <Link to="/dev/$id" params={{ id: dev.id }} className="font-display text-lg font-semibold hover:text-primary">
@@ -417,9 +417,9 @@ function Field({ label, value }: { label: string; value?: string }) {
 
 function Box({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-background/60 px-2 py-2">
-      <div className="font-display text-sm font-semibold">{value}</div>
-      <div className="text-[10px] text-subtle">{label}</div>
+    <div className="rounded-md border border-border bg-black/30 px-2 py-2">
+      <div className="font-mono text-sm font-medium">{value}</div>
+      <div className="font-pixel text-[9px] uppercase text-subtle">{label}</div>
     </div>
   );
 }
@@ -433,10 +433,10 @@ function LockCard({ t }: { t: Token }) {
       title="Dev lock"
       subtitle="Streamflow vesting contract"
       icon={<Lock />}
-      right={<span className="chip border-primary/30 bg-primary/10 text-primary">Active</span>}
+      right={<span className="chip border-foreground/40 font-pixel text-[9px] uppercase text-foreground">● Active</span>}
     >
       <div className="flex items-baseline justify-between">
-        <span className="font-display text-2xl font-semibold">100%</span>
+        <span className="font-mono text-3xl font-medium tracking-tight">100%</span>
         <span className="text-xs text-subtle">of dev allocation</span>
       </div>
       <div className="mt-1 text-sm text-muted-foreground">
@@ -461,7 +461,7 @@ function LockCard({ t }: { t: Token }) {
         <div className="flex items-center justify-between">
           <dt className="text-subtle">Contract</dt>
           <dd>
-            <a href={`https://app.streamflow.finance/contract/solana/mainnet/${l.contract}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-mono text-xs text-primary hover:underline">
+            <a href={`https://app.streamflow.finance/contract/solana/mainnet/${l.contract}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-mono text-xs text-foreground underline decoration-dotted underline-offset-4">
               {l.provider} · {short(l.contract)} <ExternalLink className="h-3 w-3" />
             </a>
           </dd>
@@ -491,8 +491,8 @@ function FeesCard({ t, claimed }: { t: Token; claimed: number }) {
           {list.map((c) => (
             <li key={c.signature} className="flex items-center gap-3 text-sm">
               <span className="w-12 shrink-0 text-xs text-subtle">{ago(c.at)}</span>
-              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
-                <div className="h-full rounded-full bg-info/70" style={{ width: `${(c.amountSol / max) * 100}%` }} />
+              <div className="h-1.5 flex-1 overflow-hidden bg-white/10">
+                <div className="h-full bg-foreground/70" style={{ width: `${(c.amountSol / max) * 100}%` }} />
               </div>
               <a href={`https://solscan.io/tx/${c.signature}`} target="_blank" rel="noreferrer" className="w-20 shrink-0 text-right font-medium tabular hover:text-primary">
                 {c.amountSol.toFixed(2)} SOL

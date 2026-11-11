@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Activity, ArrowDown, ArrowUp, BarChart3, ChevronsUpDown, Coins, ExternalLink, Lock } from "lucide-react";
+import { Activity, ArrowDown, ArrowRight, ArrowUp, BarChart3, ChevronsUpDown, Coins, ExternalLink, Lock } from "@/components/icons";
+import { Cursor, Scramble, TerminalDemo } from "@/components/code-fx";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { devById, launchpadById, listTokens } from "@/lib/api";
 import { LAUNCHPADS } from "@/lib/mock";
@@ -70,50 +71,54 @@ export function DiscoverPage() {
 
   return (
     <>
-      {/* Hero / stats */}
-      <section className="aurora relative mb-6 overflow-hidden rounded-3xl border border-border px-5 py-8 md:px-10 md:py-12">
-        <div aria-hidden className="bg-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(70%_80%_at_70%_20%,black,transparent)]" />
-        <div className="fade-up relative">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
-            </span>
-            Live on Solana
+      {/* Hero */}
+      <section className="relative mb-8 overflow-hidden rounded-xl border border-border bg-card px-5 py-8 md:px-10 md:py-12">
+        <div aria-hidden className="bg-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(80%_90%_at_80%_10%,black,transparent)]" />
+        <div className="relative grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:items-center">
+          <div className="fade-up">
+            <div className="inline-flex items-center gap-2 rounded-[4px] border border-border-strong bg-card px-2 py-1 font-pixel text-[10px] uppercase text-muted-foreground">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping bg-foreground/70" />
+                <span className="relative inline-flex h-1.5 w-1.5 bg-foreground" />
+              </span>
+              Live on Solana
+            </div>
+            <h1 className="mt-5 font-display text-4xl leading-[1.05] font-semibold md:text-6xl">
+              <Scramble text="Every dev doxed." />
+              <span className="block text-muted-foreground">
+                <Scramble text="Every bag locked." delay={350} />
+                <Cursor className="text-foreground" />
+              </span>
+            </h1>
+            <p className="font-prose mt-5 max-w-xl text-[15px] leading-relaxed text-muted-foreground">
+              Launch on Pump.fun, Raydium, LetsBonk or Meteora. Devs prove who they are to us privately, and 100% of their
+              tokens are locked for {LOCK_MIN_MONTHS}+ months. You get the proof. They keep their privacy.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center gap-2">
+              <Link to="/launch" className="btn-primary">
+                Launch a token <ArrowRight className="h-3 w-3" />
+              </Link>
+              <Link to="/how-it-works" className="btn-ghost">
+                How it works
+              </Link>
+              <CaButton value={PLATFORM_CA} />
+            </div>
           </div>
-          <h1 className="mt-5 text-4xl font-bold tracking-tight md:text-6xl">
-            <span className="bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent">Launch with a name behind it</span>
-            <span className="mt-1 block text-2xl font-medium text-muted-foreground md:text-4xl">on any Solana launchpad.</span>
-          </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <CaButton value={PLATFORM_CA} />
-          </div>
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
-            Launch on <span className="text-foreground">Pump.fun, Raydium, LetsBonk or Meteora</span> — every dev is privately verified
-            and <span className="text-primary">100% of dev tokens are locked for {LOCK_MIN_MONTHS}+ months</span>.{" "}
-          </p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <Link to="/launch" className="btn-primary rounded-full px-5">
-              Launch a token
-            </Link>
-            <Link to="/how-it-works" className="btn-ghost rounded-full px-5">
-              How verification works
-            </Link>
-          </div>
-          <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
-            <StatCard icon={Activity} label="Verified tokens" value={`${rows.length} / ${tokens.length}`} />
-            <StatCard icon={Coins} label="Total market cap" value={usd(totals.mcap)} accent />
-            <StatCard icon={BarChart3} label="24h volume" value={usd(totals.vol)} />
-            <StatCard icon={Lock} label="Dev tokens locked" value={usd(totals.locked)} />
-          </div>
+          <TerminalDemo className="fade-up [animation-delay:150ms]" />
+        </div>
+        <div className="relative mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <StatCard icon={Activity} label="Doxed tokens" value={`${rows.length}/${tokens.length}`} />
+          <StatCard icon={Coins} label="Total mcap" value={usd(totals.mcap)} accent />
+          <StatCard icon={BarChart3} label="24h volume" value={usd(totals.vol)} />
+          <StatCard icon={Lock} label="Dev bags locked" value={usd(totals.locked)} />
         </div>
       </section>
 
       {/* Trending */}
       <section className="mb-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-lg font-semibold">Trending verified launches</h2>
-          <span className="text-xs text-subtle">by 24h price change</span>
+          <h2 className="font-display text-xl font-medium">Trending</h2>
+          <span className="font-mono text-[11px] text-subtle">sort: 24h_change desc</span>
         </div>
         <div className="grid gap-3 md:grid-cols-3">
           {[...tokens]
@@ -131,8 +136,8 @@ export function DiscoverPage() {
           type="text"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search name, symbol or CA…"
-          className="h-9 w-full max-w-xs rounded-full border border-border bg-card px-4 text-sm outline-none placeholder:text-muted-foreground/70 focus:border-primary/60 focus:ring-2 focus:ring-primary/30"
+          placeholder="> search name, symbol or CA"
+          className="h-9 w-full max-w-xs rounded-md border border-border bg-card px-3 text-[13px] outline-none placeholder:text-subtle focus:border-foreground/50"
         />
         <FilterSelect
           label="Launchpad"
@@ -145,7 +150,7 @@ export function DiscoverPage() {
           value={dev}
           onChange={setDev}
           options={[
-            { label: "Any verified", value: 0 },
+            { label: "Any doxed", value: 0 },
             { label: "Socials linked", value: 1 },
             { label: "Fully public", value: 2 },
           ]}
@@ -173,12 +178,12 @@ export function DiscoverPage() {
           ]}
         />
         <div className="ml-auto flex items-center gap-2">
-          <div className="inline-flex rounded-full border border-border bg-card p-1 text-xs">
+          <div className="inline-flex rounded-md border border-border bg-card p-0.5 text-xs">
             {(["5m", "1h", "6h", "24h"] as TF[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setTf(t)}
-                className={cn("rounded-full px-3 py-1 font-medium transition", tf === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+                className={cn("rounded-[4px] px-3 py-1 font-medium transition", tf === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
               >
                 {t}
               </button>
@@ -189,10 +194,10 @@ export function DiscoverPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-raised/50 text-[11px] uppercase tracking-[0.08em] text-subtle">
+            <thead className="bg-white/[0.03] font-pixel text-[10px] uppercase text-subtle">
               <tr>
                 <Th className="w-12 text-left">#</Th>
                 <Th className="text-left">Token</Th>
@@ -304,7 +309,7 @@ function Row({ t, i, tf }: { t: Token; i: number; tf: TF }) {
       <td className="hidden px-3 py-3 text-right tabular lg:table-cell">{usd(t.liquidity)}</td>
       <td className="hidden px-3 py-3 text-right tabular md:table-cell">{int(t.holders)}</td>
       <td className="hidden px-3 py-3 text-right sm:table-cell">
-        <span className="inline-flex items-center gap-1 rounded-full border border-primary/25 bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary" title={`100% of dev tokens locked · ${monthsLeft} months left`}>
+        <span className="inline-flex items-center gap-1 rounded-[4px] border border-border-strong px-1.5 py-0.5 text-[11px] text-foreground" title={`100% of dev tokens locked · ${monthsLeft} months left`}>
           <Lock className="h-3 w-3" /> 100% · {monthsLeft}mo
         </span>
       </td>
@@ -314,9 +319,9 @@ function Row({ t, i, tf }: { t: Token; i: number; tf: TF }) {
           href="#"
           onClick={(e) => e.stopPropagation()}
           title={`Trade on ${lp.name}`}
-          className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-border-strong bg-background/60 px-2.5 py-1 text-xs font-medium text-foreground/90 transition hover:border-primary/50 hover:bg-primary/10 hover:text-foreground"
+          className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-border-strong bg-card px-2.5 py-1 text-xs font-medium text-foreground/90 transition hover:border-primary/50 hover:bg-primary/10 hover:text-foreground"
         >
-          <span className="h-1.5 w-1.5 rounded-full" style={{ background: lp.color }} />
+          <span className="h-1.5 w-1.5 bg-current" />
           {lp.name} <ExternalLink className="h-3 w-3" />
         </a>
       </td>
@@ -330,7 +335,7 @@ function TrendCard({ t, rank }: { t: Token; rank: number }) {
     <Link
       to="/token/$mint"
       params={{ mint: t.mint }}
-      className="group relative overflow-hidden rounded-2xl border border-border bg-card p-4 transition hover:-translate-y-0.5 hover:border-border-strong hover:bg-raised/40"
+      className="group relative overflow-hidden rounded-xl border border-border bg-card p-4 transition hover:-translate-y-0.5 hover:border-foreground/40"
     >
       <div className="flex items-start gap-3">
         <TokenIcon t={t} size={44} />
@@ -338,21 +343,21 @@ function TrendCard({ t, rank }: { t: Token; rank: number }) {
           <div className="flex items-center gap-1.5">
             <span className="font-semibold">{t.symbol}</span>
             <KydMark dev={dev} />
-            <span className="ml-auto font-mono text-xs text-subtle">#{rank}</span>
+            <span className="ml-auto font-pixel text-[10px] text-subtle">#{rank}</span>
           </div>
           <div className="truncate text-xs text-muted-foreground">{t.name}</div>
         </div>
       </div>
       <div className="mt-3 flex items-end justify-between gap-3">
         <div>
-          <div className="text-lg font-semibold tabular">{usd(t.mcap)}</div>
+          <div className="font-mono text-2xl font-medium tracking-tight">{usd(t.mcap)}</div>
           <div className={cn("text-xs tabular", deltaClass(t.change["24h"]))}>{pct(t.change["24h"])} 24h</div>
         </div>
         <Sparkline data={t.series} up={t.change["24h"] >= 0} className="h-10 w-28" />
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
         <LaunchpadChip id={t.launchpad} />
-        <span className="chip border-primary/25 bg-primary/10 text-primary">
+        <span className="chip border-border-strong text-foreground">
           <Lock className="h-3 w-3" /> 100% locked
         </span>
       </div>

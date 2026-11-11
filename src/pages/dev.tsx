@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
-import { ArrowLeft, CheckCircle2, Lock, ShieldCheck, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Lock, XCircle } from "@/components/icons";
 import { getDev, tokensByDev } from "@/lib/api";
 import { ago, cn, date, deltaClass, pct, short, usd } from "@/lib/format";
 import type { Dev } from "@/lib/types";
+import { Identicon } from "@/components/icons";
 import { CopyButton, DISCLOSURE, GithubIcon, KydBadge, LaunchpadChip, Redacted, SectionCard, TokenIcon, XIcon } from "@/components/ui";
 
 const CHECKS: [keyof Dev["checks"], string, string][] = [
@@ -32,12 +33,10 @@ export function DevPage() {
       <header className="card relative overflow-hidden p-5 sm:p-6">
         <div className="bg-grid pointer-events-none absolute inset-0 opacity-50" aria-hidden />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center">
-          <span className="flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10">
-            <ShieldCheck className="h-8 w-8 text-primary" />
-          </span>
+          <Identicon seed={dev.alias} size={64} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-semibold">{dev.alias}</h1>
+              <h1 className="font-display text-3xl font-semibold">{dev.alias}</h1>
               <KydBadge dev={dev} size="md" />
             </div>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{dev.revealed.bio ?? d.desc}</p>
@@ -107,7 +106,7 @@ export function DevPage() {
           ["Fees claimed", `${dev.stats.totalFeesClaimedSol.toFixed(1)} SOL`],
         ].map(([l, v]) => (
           <div key={l} className="card p-4">
-            <div className="font-display text-2xl font-semibold">{v}</div>
+            <div className="font-mono text-2xl font-medium">{v}</div>
             <div className="text-xs text-subtle">{l}</div>
           </div>
         ))}

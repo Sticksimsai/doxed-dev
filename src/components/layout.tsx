@@ -1,36 +1,18 @@
 import { Link, Outlet } from "@tanstack/react-router";
-import { ArrowUp, BookOpen, ChartNoAxesCombined, Code2, Rocket, Star } from "lucide-react";
+import { ArrowUp, BookOpen, ChartNoAxesCombined, Code2, DoxedMark, Rocket, Star } from "@/components/icons";
+import { EventTicker } from "./code-fx";
 import { useEffect, useState } from "react";
-import { BRAND_BOLD, BRAND_LIGHT, X_URL } from "@/lib/brand";
+import { APP_NAME, BRAND_BOLD, BRAND_LIGHT, X_URL } from "@/lib/brand";
 import { XIcon } from "./ui";
 
-const navBase = "whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm text-muted-foreground transition hover:text-foreground";
+const navBase = "whitespace-nowrap rounded-[4px] px-3 py-1.5 text-[13px] text-muted-foreground transition hover:text-foreground";
 const navActive = `${navBase} bg-raised text-foreground shadow-[inset_0_0_0_1px_var(--border-strong)]`;
-
-/** Logo: a notched seal with a check — the "vouched for" stamp. */
-export function SealMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <defs>
-        <linearGradient id="seal-g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="oklch(0.9 0.12 85)" />
-          <stop offset="1" stopColor="oklch(0.72 0.16 60)" />
-        </linearGradient>
-      </defs>
-      <path
-        fill="url(#seal-g)"
-        d="M16 1.5l3.1 2.6 4-.5 1.6 3.7 3.7 1.6-.5 4 2.6 3.1-2.6 3.1.5 4-3.7 1.6-1.6 3.7-4-.5L16 30.5l-3.1-2.6-4 .5-1.6-3.7-3.7-1.6.5-4L1.5 16l2.6-3.1-.5-4 3.7-1.6 1.6-3.7 4 .5z"
-      />
-      <path d="M10.5 16.4l3.6 3.6 7.4-7.6" fill="none" stroke="oklch(0.18 0.03 70)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 export function Brand({ small }: { small?: boolean }) {
   return (
     <Link to="/" className="group flex shrink-0 items-center gap-2.5">
-      <SealMark className={small ? "h-7 w-7" : "h-8 w-8"} />
-      <span className={`font-display whitespace-nowrap font-bold tracking-tight ${small ? "text-xs sm:text-sm" : "text-sm lg:text-[17px]"}`}>
+      <span className="flex items-center justify-center rounded-md border border-border-strong bg-card p-1.5"><DoxedMark className={small ? "h-4 w-5" : "h-[18px] w-[22px]"} /></span>
+      <span className={`font-display whitespace-nowrap font-semibold ${small ? "text-sm" : "text-base lg:text-lg"}`}>
         {BRAND_BOLD} <span className="font-normal text-muted-foreground">{BRAND_LIGHT}</span>
       </span>
     </Link>
@@ -60,8 +42,8 @@ function LiveViewers() {
   return (
     <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
       <span className="relative flex h-2 w-2">
-        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-success/80 opacity-75" />
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
+        <span className="absolute inline-flex h-full w-full animate-ping bg-foreground/70 opacity-75" />
+        <span className="relative inline-flex h-2 w-2 bg-foreground" />
       </span>
       <span className="tabular">{n} viewing</span>
     </div>
@@ -86,7 +68,7 @@ function NavLinks() {
 
 function SiteHeader() {
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-background/75 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-border bg-background/70 backdrop-blur-xl">
       <div className="mx-auto max-w-[1400px] px-3 sm:px-4">
         <div className="flex h-14 items-center gap-2.5 lg:h-16 lg:gap-3">
           <Brand />
@@ -97,14 +79,14 @@ function SiteHeader() {
               <LiveViewers />
             </span>
             <nav className="hidden items-center gap-2 lg:flex">
-              <div className="flex items-center gap-0.5 rounded-full border border-border bg-card/60 p-1">
+              <div className="flex items-center gap-0.5 rounded-md border border-border bg-card p-1">
                 <NavLinks />
               </div>
               <Link
                 to="/launch"
-                className="ml-1 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-[0_6px_20px_-6px_var(--primary)] transition hover:brightness-110"
+                className="btn-primary ml-1 !py-1.5 text-[13px]"
               >
-                <Rocket className="h-3.5 w-3.5" /> Launch token
+                <Rocket className="h-3.5 w-3.5" /> Launch
               </Link>
               <a href={X_URL} target="_blank" rel="noreferrer" aria-label="X" className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-raised hover:text-foreground">
                 <XIcon className="h-[18px] w-[18px]" />
@@ -119,6 +101,7 @@ function SiteHeader() {
           <NavLinks />
         </nav>
       </div>
+      <EventTicker />
     </header>
   );
 }
@@ -166,12 +149,13 @@ function SiteFooter() {
 
 export function AppShell() {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen text-foreground">
+      <div className="backdrop" aria-hidden />
       <SiteHeader />
       <main className="mx-auto w-full max-w-[1400px] px-4 py-6 pb-24">
         <Outlet />
-        <p className="mt-10 text-center text-[11px] text-muted-foreground/70">
-          {BRAND_BOLD} verifies developers and enforces locks. It does not make any token a safe investment — always do your own research.
+        <p className="mt-10 text-center font-mono text-[11px] text-subtle">
+          {APP_NAME} verifies developers and enforces locks. It does not make any token a safe investment — always do your own research.
         </p>
       </main>
       <SiteFooter />

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronDown, Coins, EyeOff, Layers, Lock, Rocket, ShieldCheck, Sparkles } from "lucide-react";
+import { ChevronDown, Coins, EyeOff, Layers, Lock, Rocket, ShieldCheck, Sparkles } from "@/components/icons";
 import { APP_NAME, LOCK_MIN_MONTHS } from "@/lib/brand";
 import { LAUNCHPADS } from "@/lib/mock";
 
@@ -11,8 +11,8 @@ const PILLARS = [
   },
   {
     icon: ShieldCheck,
-    title: "Know Your Dev",
-    body: "Every dev verifies their identity with us before launching. Holders see the badge; the personal details stay private.",
+    title: "Doxed, privately",
+    body: "Every dev proves who they are to us before launching. Holders see the Doxed badge; the personal details stay private.",
   },
   {
     icon: Lock,
@@ -63,8 +63,8 @@ export function HowItWorksPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-10">
       <header className="text-center">
-        <span className="chip border-primary/30 bg-primary/10 text-primary">How {APP_NAME} works</span>
-        <h1 className="mt-4 text-3xl font-semibold sm:text-4xl">Trust layer for Solana launchpads</h1>
+        <span className="chip border-border-strong bg-card text-foreground">How {APP_NAME} works</span>
+        <h1 className="mt-4 font-display text-4xl font-semibold sm:text-5xl">Trust layer for Solana launchpads</h1>
         <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
           We don't replace your favourite launchpad. We add the two things memecoins are missing: an accountable dev and a dev
           bag that can't be dumped.
@@ -74,9 +74,9 @@ export function HowItWorksPage() {
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {PILLARS.map((p) => (
           <div key={p.title} className="card p-5">
-            <p.icon className="h-5 w-5 text-primary" />
-            <h3 className="mt-3 font-semibold">{p.title}</h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">{p.body}</p>
+            <span className="inline-flex rounded-md border border-border-strong p-2"><p.icon className="h-4 w-4" /></span>
+            <h3 className="mt-3 font-display text-lg font-medium">{p.title}</h3>
+            <p className="font-prose mt-1.5 text-sm leading-relaxed text-muted-foreground">{p.body}</p>
           </div>
         ))}
       </section>
@@ -91,7 +91,7 @@ export function HowItWorksPage() {
               "Read the AI summary and watch-outs, then decide.",
             ].map((s, i) => (
               <li key={s} className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-raised text-xs font-semibold">{i + 1}</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] bg-raised text-xs font-semibold">{i + 1}</span>
                 <span className="text-muted-foreground">{s}</span>
               </li>
             ))}
@@ -106,7 +106,7 @@ export function HowItWorksPage() {
               `Launch — your dev tokens lock for ${LOCK_MIN_MONTHS}+ months automatically.`,
             ].map((s, i) => (
               <li key={s} className="flex gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-raised text-xs font-semibold">{i + 1}</span>
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] bg-raised text-xs font-semibold">{i + 1}</span>
                 <span className="text-muted-foreground">{s}</span>
               </li>
             ))}
@@ -122,7 +122,7 @@ export function HowItWorksPage() {
         <div className="flex flex-wrap gap-2">
           {LAUNCHPADS.map((l) => (
             <span key={l.id} className="chip border-border-strong px-3 py-1.5 text-sm text-muted-foreground">
-              <span className="h-2 w-2 rounded-full" style={{ background: l.color }} />
+              <span className="h-2 w-2 rounded-[4px]"  />
               {l.name}
               {!l.available && <span className="text-subtle">· soon</span>}
             </span>
@@ -139,7 +139,7 @@ export function HowItWorksPage() {
                 {f.q}
                 <ChevronDown className="h-4 w-4 shrink-0 text-subtle transition group-open:rotate-180" />
               </summary>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{f.a}</p>
+              <p className="font-prose mt-2 text-sm leading-relaxed text-muted-foreground">{f.a}</p>
             </details>
           ))}
         </div>

@@ -1,4 +1,4 @@
-# Vouch (working name)
+# Doxed Dev
 
 A trust layer on top of Solana launchpads. Devs launch natively on Pump.fun, Raydium LaunchLab, LetsBonk, Meteora DBC (Float soon) — but only after:
 

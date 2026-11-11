@@ -1,9 +1,8 @@
-// Working name — change here and it updates everywhere.
-// Rendered EZ-Screener style: bold first part, muted second part.
-export const BRAND_BOLD = "Vouch";
-export const BRAND_LIGHT = "Launchpad";
-export const APP_NAME = BRAND_BOLD;
+// Change the name here and it updates everywhere.
+export const BRAND_BOLD = "Doxed";
+export const BRAND_LIGHT = "Dev";
+export const APP_NAME = "Doxed Dev";
 export const LOCK_MIN_MONTHS = 12;
-// Platform token CA shown in the glowing hero pill (placeholder until launch).
-export const PLATFORM_CA = "Vch9mQ2wLk7rT4pZ1xYcN8sD3fGhJ5aB6eKuVoUCH";
+// Platform token CA (placeholder until launch).
+export const PLATFORM_CA = "Dx9mQ2wLk7rT4pZ1xYcN8sD3fGhJ5aB6eKuVoDEV";
 export const X_URL = "https://x.com";

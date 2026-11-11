@@ -1,7 +1,8 @@
 import { useState, type ReactNode } from "react";
-import { Check, ChevronDown, Copy, Eye, EyeOff, Globe, Lock, ShieldCheck, UserRound } from "lucide-react";
+import { Check, ChevronDown, Copy, Eye, EyeOff, Globe, Lock, ShieldCheck, UserRound } from "@/components/icons";
 import { Link } from "@tanstack/react-router";
 import { launchpadById } from "@/lib/api";
+import { Identicon } from "./icons";
 import { cn, short } from "@/lib/format";
 import type { Dev, Disclosure, LaunchpadId, Token } from "@/lib/types";
 
@@ -22,30 +23,14 @@ export function GithubIcon({ className }: { className?: string }) {
 }
 
 export function TokenIcon({ t, size = 40 }: { t: Pick<Token, "symbol" | "hue">; size?: number }) {
-  return (
-    <span
-      className="inline-flex shrink-0 items-center justify-center rounded-full font-display font-bold text-background"
-      style={{
-        width: size,
-        height: size,
-        fontSize: size * 0.36,
-        background: `radial-gradient(circle at 30% 25%, oklch(0.9 0.12 ${t.hue}), oklch(0.62 0.17 ${t.hue}))`,
-      }}
-      aria-hidden
-    >
-      {t.symbol.slice(0, 2)}
-    </span>
-  );
+  return <Identicon seed={t.symbol + t.hue} size={size} />;
 }
 
 export function LaunchpadChip({ id, className }: { id: LaunchpadId; className?: string }) {
   const lp = launchpadById(id);
   return (
-    <span
-      className={cn("chip border-transparent", className)}
-      style={{ background: `color-mix(in oklab, ${lp.color} 14%, transparent)`, color: lp.color }}
-    >
-      <span className="h-1.5 w-1.5 rounded-full" style={{ background: lp.color }} />
+    <span className={cn("chip border-border-strong text-muted-foreground", className)}>
+      <span className="h-1.5 w-1.5 bg-current" />
       {lp.name}
     </span>
   );
@@ -53,21 +38,21 @@ export function LaunchpadChip({ id, className }: { id: LaunchpadId; className?: 
 
 export const DISCLOSURE: Record<Disclosure, { label: string; short: string; desc: string; icon: typeof Eye }> = {
   private: {
-    label: "Verified · Private",
+    label: "Doxed · Private",
     short: "Private",
-    desc: "Identity checked by us and kept confidential. Nothing personal is shown publicly.",
+    desc: "Doxed to us, not to you. Identity checked and kept confidential — nothing personal is shown publicly.",
     icon: EyeOff,
   },
   pseudonymous: {
-    label: "Verified · Socials linked",
+    label: "Doxed · Socials",
     short: "Socials",
-    desc: "Identity checked by us. The dev publicly linked accounts they proved they own.",
+    desc: "Identity checked by us. The dev also publicly linked the X / GitHub accounts they proved they own.",
     icon: UserRound,
   },
   public: {
-    label: "Verified · Fully public",
+    label: "Doxed · Public",
     short: "Public",
-    desc: "Identity checked by us, and the dev chose to show their real name publicly.",
+    desc: "Fully doxed. Identity checked by us and the dev chose to show their real name publicly.",
     icon: Eye,
   },
 };
@@ -80,18 +65,18 @@ export function KydBadge({ dev, size = "sm" }: { dev: Dev; size?: "sm" | "md" })
       <span
         tabIndex={0}
         className={cn(
-          "chip cursor-help border-primary/30 bg-primary/10 text-primary",
+          "chip cursor-help border-foreground/40 bg-foreground/10 text-foreground",
           size === "md" && "px-2.5 py-1 text-xs",
         )}
       >
         <ShieldCheck className={size === "md" ? "h-3.5 w-3.5" : "h-3 w-3"} />
-        {size === "md" ? d.label : `KYD · ${d.short}`}
+        {size === "md" ? d.label : `DOXED · ${d.short}`}
       </span>
       <span
         role="tooltip"
-        className="pointer-events-none absolute top-full left-0 z-40 mt-2 w-64 rounded-lg border border-border-strong bg-raised p-3 text-xs leading-relaxed text-muted-foreground opacity-0 shadow-xl transition group-focus-within:opacity-100 group-hover:opacity-100"
+        className="pointer-events-none absolute top-full left-0 z-40 mt-2 w-64 rounded-md border border-border-strong bg-[#0b0b0b]/95 p-3 text-xs leading-relaxed text-muted-foreground opacity-0 shadow-xl transition group-focus-within:opacity-100 group-hover:opacity-100"
       >
-        <span className="mb-1 block font-semibold text-foreground">Know Your Dev: {d.short}</span>
+        <span className="mb-1 block font-semibold text-foreground">{d.label}</span>
         {d.desc}
       </span>
     </span>
@@ -146,12 +131,12 @@ export function PriceChart({ data, up }: { data: number[]; up: boolean }) {
   const xy = data.map((v, i) => [(i / (data.length - 1)) * W, Hh - ((v - min) / (max - min || 1)) * (Hh - 16) - 8]);
   const line = xy.map((p) => p.join(",")).join(" ");
   const area = `0,${Hh} ${line} ${W},${Hh}`;
-  const c = up ? "var(--success)" : "var(--danger)";
+  const c = "var(--foreground)";
   return (
     <svg viewBox={`0 0 ${W} ${Hh}`} preserveAspectRatio="none" className="h-56 w-full" role="img" aria-label="Price history">
       <defs>
         <linearGradient id="pc-fill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={c} stopOpacity="0.25" />
+          <stop offset="0%" stopColor={c} stopOpacity="0.14" />
           <stop offset="100%" stopColor={c} stopOpacity="0" />
         </linearGradient>
       </defs>
@@ -159,25 +144,30 @@ export function PriceChart({ data, up }: { data: number[]; up: boolean }) {
         <line key={f} x1="0" x2={W} y1={Hh * f} y2={Hh * f} stroke="var(--border)" strokeDasharray="3 5" />
       ))}
       <polygon points={area} fill="url(#pc-fill)" />
-      <polyline points={line} fill="none" stroke={c} strokeWidth="2" vectorEffect="non-scaling-stroke" />
+      <polyline points={line} fill="none" stroke={c} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+      {!up && <text x={W - 6} y={14} textAnchor="end" fill="var(--danger)" fontSize="11" fontFamily="var(--font-mono)">▼</text>}
     </svg>
   );
 }
 
-/** Progress bar for time-based locks. */
+/** Segmented pixel progress bar for time-based locks. */
 export function LockProgress({ startsAt, unlocksAt }: { startsAt: string; unlocksAt: string }) {
-  const s = Date.parse(startsAt);
+  const st = Date.parse(startsAt);
   const e = Date.parse(unlocksAt);
-  const p = Math.min(100, Math.max(0, ((Date.now() - s) / (e - s)) * 100));
+  const p = Math.min(100, Math.max(0, ((Date.now() - st) / (e - st)) * 100));
   const daysLeft = Math.max(0, Math.ceil((e - Date.now()) / 86_400_000));
+  const SEG = 24;
+  const filled = Math.max(1, Math.round((p / 100) * SEG));
   return (
     <div>
-      <div className="h-2 overflow-hidden rounded-full bg-muted">
-        <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(p, 1.5)}%` }} />
+      <div className="flex gap-[3px]">
+        {Array.from({ length: SEG }, (_, i) => (
+          <span key={i} className={cn("h-2.5 flex-1", i < filled ? "bg-foreground" : "bg-white/10")} />
+        ))}
       </div>
-      <div className="mt-1.5 flex justify-between text-[11px] text-subtle">
-        <span>{p.toFixed(0)}% of term elapsed</span>
-        <span>{daysLeft} days left</span>
+      <div className="mt-1.5 flex justify-between font-mono text-[11px] text-subtle">
+        <span>{p.toFixed(0)}% elapsed</span>
+        <span>{daysLeft}d left</span>
       </div>
     </div>
   );
@@ -187,7 +177,7 @@ export function LockedPill({ unlocksAt }: { unlocksAt: string }) {
   const months = Math.max(0, Math.round((Date.parse(unlocksAt) - Date.now()) / (30 * 86_400_000)));
   return (
     <span className="chip border-border-strong bg-background/40 text-muted-foreground">
-      <Lock className="h-3 w-3 text-primary" />
+      <Lock className="h-3 w-3" />
       {months}mo
     </span>
   );
@@ -211,17 +201,17 @@ export function SectionCard({
   id?: string;
 }) {
   return (
-    <section id={id} className={cn("rounded-2xl border border-border bg-card p-5 shadow-[0_1px_0_0_var(--border)_inset]", className)}>
+    <section id={id} className={cn("rounded-xl border border-border bg-card p-5", className)}>
       <div className="mb-4 flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           {icon && (
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary [&_svg]:h-5 [&_svg]:w-5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border-strong bg-white/[0.04] text-foreground [&_svg]:h-4 [&_svg]:w-4">
               {icon}
             </div>
           )}
           <div>
-            <h2 className="font-display text-[15px] font-semibold text-foreground">{title}</h2>
-            {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+            <h2 className="font-display text-base font-medium text-foreground">{title}</h2>
+            {subtitle && <p className="text-[11px] text-subtle">{subtitle}</p>}
           </div>
         </div>
         {right}
@@ -236,22 +226,22 @@ export function StatCard({ label, value, icon: Icon, accent }: { label: string; 
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-2xl border bg-background/40 px-4 py-4 backdrop-blur transition hover:border-primary/40",
-        accent ? "border-primary/30" : "border-border",
+        "group relative overflow-hidden rounded-lg border bg-card px-4 py-4 transition hover:border-border-strong",
+        accent ? "border-border-strong" : "border-border",
       )}
     >
       <div
         aria-hidden
         className={cn(
           "absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent to-transparent",
-          accent ? "via-primary" : "via-border",
+          accent ? "via-white/60" : "via-white/10",
         )}
       />
       <div className="flex items-center justify-between gap-2">
-        <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">{label}</div>
-        {Icon && <Icon className={cn("h-3.5 w-3.5", accent ? "text-primary" : "text-muted-foreground/60")} />}
+        <div className="font-pixel text-[10px] uppercase text-subtle">{label}</div>
+        {Icon && <Icon className={cn("h-3.5 w-3.5", accent ? "text-foreground" : "text-subtle")} />}
       </div>
-      <div className="mt-1.5 text-xl font-semibold tracking-tight tabular md:text-2xl">{value}</div>
+      <div className="mt-2 font-mono text-2xl font-medium tracking-tight md:text-[28px]">{value}</div>
     </div>
   );
 }
@@ -268,14 +258,14 @@ export function CaButton({ value }: { value: string }) {
         setTimeout(() => setCopied(false), 1500);
       }}
       className={cn(
-        "ca-glow group inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border px-2.5 py-1 font-mono text-xs transition-all active:scale-[0.97] sm:gap-2.5 sm:px-3 sm:py-1.5 sm:text-sm",
-        copied ? "border-primary/50 bg-primary/15 text-primary" : "border-primary/30 bg-primary/[0.06] text-primary hover:border-primary/50 hover:bg-primary/10",
+        "group inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border px-2.5 py-1 font-mono text-xs transition-all active:scale-[0.97] sm:gap-2.5 sm:px-3 sm:py-1.5 sm:text-sm",
+        copied ? "border-foreground bg-foreground text-background" : "border-border-strong bg-card text-foreground hover:border-foreground/50",
       )}
       title="Copy contract address"
     >
-      <span className="text-[9px] font-bold uppercase tracking-[0.14em] text-primary/70 sm:text-[10px]">{copied ? "Copied" : "CA"}</span>
-      <span className="font-medium text-foreground/90 group-hover:text-foreground">{short(value, 4, 4)}</span>
-      <span className="flex items-center justify-center rounded-md bg-primary/10 p-1 text-primary/70 group-hover:bg-primary/20 group-hover:text-primary">
+      <span className="font-pixel text-[10px] uppercase opacity-60">{copied ? "Copied" : "CA"}</span>
+      <span className="font-medium">{short(value, 4, 4)}</span>
+      <span className="flex items-center justify-center opacity-60 group-hover:opacity-100">
         {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
       </span>
     </button>
@@ -295,8 +285,8 @@ export function FilterSelect<T extends string | number>({
   options: { label: string; value: T }[];
 }) {
   return (
-    <label className="relative inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-card pr-8 pl-4 text-sm transition hover:border-border-strong focus-within:border-primary/60">
-      <span className="text-muted-foreground">{label}</span>
+    <label className="relative inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-card pr-8 pl-3 text-[13px] transition hover:border-border-strong focus-within:border-foreground/50">
+      <span className="text-subtle">{label}</span>
       <select
         value={String(value)}
         onChange={(e) => {
@@ -311,7 +301,7 @@ export function FilterSelect<T extends string | number>({
           </option>
         ))}
       </select>
-      <ChevronDown className="pointer-events-none absolute right-2.5 h-4 w-4 text-muted-foreground" />
+      <ChevronDown className="pointer-events-none absolute right-2.5 h-3 w-3 text-muted-foreground" />
     </label>
   );
 }
@@ -347,15 +337,15 @@ export function KydMark({ dev, size = 16 }: { dev: Dev; size?: number }) {
     <span className="group relative inline-flex" onClick={(e) => e.stopPropagation()}>
       <span
         tabIndex={0}
-        className="inline-flex cursor-help items-center justify-center rounded-full bg-primary text-primary-foreground"
+        className="inline-flex cursor-help items-center justify-center rounded-[3px] bg-foreground text-background"
         style={{ width: size, height: size }}
-        aria-label={`Know Your Dev: ${DISCLOSURE[dev.disclosure].label}`}
+        aria-label={DISCLOSURE[dev.disclosure].label}
       >
         <ShieldCheck style={{ width: size * 0.66, height: size * 0.66 }} strokeWidth={2.5} />
       </span>
       <span
         role="tooltip"
-        className="pointer-events-none absolute top-full left-1/2 z-40 mt-2 w-60 -translate-x-1/2 rounded-lg border border-border bg-card p-3 text-left text-xs font-normal leading-relaxed text-muted-foreground opacity-0 shadow-xl transition group-focus-within:opacity-100 group-hover:opacity-100"
+        className="pointer-events-none absolute top-full left-1/2 z-40 font-prose mt-2 w-60 -translate-x-1/2 rounded-md border border-border-strong bg-[#0b0b0b]/95 p-3 text-left text-xs font-normal leading-relaxed text-muted-foreground opacity-0 shadow-xl transition group-focus-within:opacity-100 group-hover:opacity-100"
       >
         <span className="mb-1 block font-semibold text-foreground">{DISCLOSURE[dev.disclosure].label}</span>
         {DISCLOSURE[dev.disclosure].desc}
@@ -388,15 +378,14 @@ export function Kpi({
   if (variant === "cyber") {
     return (
       <div className={cn("group relative", className)}>
-        <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-primary/20 to-primary/10 opacity-30 blur transition duration-500 group-hover:opacity-60" />
-        <div className="relative flex h-full min-h-[8rem] flex-col justify-between rounded-2xl border border-primary/15 bg-card/90 p-4 backdrop-blur-xl">
+                <div className="relative flex h-full min-h-[8rem] flex-col justify-between rounded-xl border border-border-strong bg-card p-4 transition group-hover:border-foreground/40">
           <div className="flex items-center gap-2">
-            <div className="rounded-lg bg-primary/10 p-1.5 text-primary">{icon}</div>
-            <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-muted-foreground">{label}</span>
+            <div className="rounded-[4px] border border-border-strong p-1.5 text-foreground [&_svg]:h-3.5 [&_svg]:w-3.5">{icon}</div>
+            <span className="font-pixel text-[10px] uppercase text-subtle">{label}</span>
           </div>
           <div className="flex items-end justify-between gap-2">
             <div>
-              <div className={cn("font-semibold tabular", lg ? "text-3xl" : "text-2xl")}>{value}</div>
+              <div className={cn("font-mono font-medium tracking-tight", lg ? "text-3xl" : "text-2xl")}>{value}</div>
               {sub && <div className="mt-1 text-[11px] text-muted-foreground">{sub}</div>}
             </div>
             {change != null && change !== 0 && (
@@ -411,12 +400,12 @@ export function Kpi({
     );
   }
   return (
-    <div className={cn("flex flex-col justify-between rounded-2xl border border-border bg-card backdrop-blur-sm", lg ? "p-5" : "p-4", className)}>
-      <div className={cn("flex items-center gap-1.5 uppercase tracking-wide text-muted-foreground", lg ? "text-xs" : "text-[11px]")}>
-        {icon && <span className="opacity-80">{icon}</span>}
+    <div className={cn("flex flex-col justify-between rounded-xl border border-border bg-card", lg ? "p-5" : "p-4", className)}>
+      <div className="flex items-center gap-1.5 font-pixel text-[10px] uppercase text-subtle [&_svg]:h-3.5 [&_svg]:w-3.5">
+        {icon && <span>{icon}</span>}
         {label}
       </div>
-      <div className={cn("mt-2 font-semibold tracking-tight tabular", lg ? "text-3xl" : "text-xl")}>{value}</div>
+      <div className={cn("mt-2 font-mono font-medium tracking-tight", lg ? "text-3xl" : "text-2xl")}>{value}</div>
       {sub && <div className="mt-1 text-[11px] text-muted-foreground">{sub}</div>}
     </div>
   );

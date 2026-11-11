@@ -12,8 +12,9 @@ import {
   PartyPopper,
   Rocket,
   ShieldCheck,
-} from "lucide-react";
+} from "@/components/icons";
 import { useMemo, useState, type ReactNode } from "react";
+import { Cursor, Scramble } from "@/components/code-fx";
 import { LAUNCHPADS } from "@/lib/mock";
 import { APP_NAME, LOCK_MIN_MONTHS } from "@/lib/brand";
 import { cn } from "@/lib/format";
@@ -77,13 +78,14 @@ export function LaunchPage() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <section className="aurora relative mb-6 overflow-hidden rounded-3xl border border-border px-5 py-7 md:px-8">
+      <section className="relative mb-6 overflow-hidden rounded-xl border border-border bg-card px-5 py-7 md:px-8">
                 <div className="relative">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+          <div className="inline-flex items-center gap-2 rounded-[4px] border border-border-strong px-2 py-1 font-pixel text-[10px] uppercase text-muted-foreground">
             <Rocket className="h-3 w-3" /> About 5 minutes
           </div>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-            <span className="bg-gradient-to-r from-foreground via-foreground to-primary bg-clip-text text-transparent">Launch a token</span>
+          <h1 className="mt-3 font-display text-3xl font-semibold md:text-5xl">
+            <Scramble text="Launch a token" />
+            <Cursor />
           </h1>
           <p className="mt-2 text-sm text-muted-foreground md:text-base">Verify once, then launch on the launchpad you prefer — we handle the lock.</p>
         </div>
@@ -101,7 +103,7 @@ export function LaunchPage() {
                 onClick={() => setStep(i)}
                 className="group w-full text-left disabled:cursor-not-allowed"
               >
-                <div className={cn("h-1 rounded-full transition", done || cur ? "bg-primary" : "bg-muted")} />
+                <div className={cn("h-1 rounded-[4px] transition", done || cur ? "bg-primary" : "bg-muted")} />
                 <div className={cn("mt-2 hidden items-center gap-1.5 text-xs sm:flex", cur ? "text-foreground" : "text-subtle")}>
                   {done ? <Check className="h-3.5 w-3.5 text-primary" /> : <span className="tabular">{i + 1}.</span>}
                   {s}
@@ -156,7 +158,7 @@ export function LaunchPage() {
           <div className="card p-4">
             <div className="flex items-center gap-3">
               {f.image ? (
-                <img src={f.image} alt="" className="h-11 w-11 rounded-full object-cover" />
+                <img src={f.image} alt="" className="h-11 w-11 rounded-[4px] object-cover" />
               ) : (
                 <TokenIcon t={preview} size={44} />
               )}
@@ -168,8 +170,8 @@ export function LaunchPage() {
             <div className="mt-3 flex flex-wrap gap-1.5">
               {f.launchpad && <LaunchpadChip id={f.launchpad} />}
               {f.kyd === "done" && (
-                <span className="chip border-primary/30 bg-primary/10 text-primary">
-                  <ShieldCheck className="h-3 w-3" /> KYD · {DISCLOSURE[f.disclosure].short}
+                <span className="chip border-border-strong bg-card text-foreground">
+                  <ShieldCheck className="h-3 w-3" /> DOXED · {DISCLOSURE[f.disclosure].short}
                 </span>
               )}
               <span className="chip border-border-strong text-muted-foreground">
@@ -219,8 +221,8 @@ function StepVerify({ f, set }: StepProps) {
   return (
     <div>
       <StepTitle
-        title="Know Your Dev"
-        desc={`Verify your identity privately with ${APP_NAME}. It's a one-time check and lets every future launch carry the verified badge.`}
+        title="Get doxed (privately)"
+        desc={`Prove who you are to ${APP_NAME} once. Holders see the Doxed badge, never your documents.`}
       />
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -249,11 +251,11 @@ function StepVerify({ f, set }: StepProps) {
       <div className="mt-4 rounded-xl border border-border-strong bg-background/50 p-4">
         {f.kyd === "done" ? (
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/15">
+            <span className="flex h-9 w-9 items-center justify-center rounded-[4px] bg-primary/15">
               <Check className="h-5 w-5 text-primary" />
             </span>
             <div>
-              <div className="font-medium">You're verified</div>
+              <div className="font-medium">You're doxed</div>
               <div className="text-xs text-subtle">Wallet 7xKp…9fQa · valid for future launches</div>
             </div>
           </div>
@@ -269,7 +271,7 @@ function StepVerify({ f, set }: StepProps) {
               }}
             >
               {f.kyd === "checking" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-              {f.kyd === "checking" ? "Checking…" : "Start verification"}
+              {f.kyd === "checking" ? "Checking…" : "Start doxing"}
             </button>
           </div>
         )}
@@ -286,7 +288,7 @@ function StepVerify({ f, set }: StepProps) {
                 key={k}
                 onClick={() => set("disclosure", k)}
                 aria-pressed={on}
-                className={cn("rounded-xl border p-3.5 text-left transition", on ? "border-primary/50 bg-primary/5 glow-ring" : "border-border hover:border-border-strong")}
+                className={cn("rounded-xl border p-3.5 text-left transition", on ? "border-primary/50 bg-primary/5 ring-1 ring-foreground/60" : "border-border hover:border-border-strong")}
               >
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <d.icon className={cn("h-4 w-4", on ? "text-primary" : "text-subtle")} />
@@ -322,12 +324,12 @@ function StepLaunchpad({ f, set }: StepProps) {
               aria-pressed={on}
               className={cn(
                 "rounded-xl border p-4 text-left transition disabled:cursor-not-allowed disabled:opacity-50",
-                on ? "border-primary/50 bg-primary/5 glow-ring" : "border-border hover:border-border-strong",
+                on ? "border-primary/50 bg-primary/5 ring-1 ring-foreground/60" : "border-border hover:border-border-strong",
               )}
             >
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2 font-semibold">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: l.color }} />
+                  <span className="h-2 w-2 bg-current" />
                   {l.name}
                 </span>
                 {on ? <CheckCircle2 className="h-4 w-4 text-primary" /> : !l.available && <span className="text-[11px] text-subtle">Soon</span>}
@@ -360,7 +362,7 @@ function StepDetails({ f, set }: StepProps) {
     <div>
       <StepTitle title="Tell people about your token" desc="Links matter: our AI reads your X, website and GitHub to write the public summary and code review." />
       <div className="grid gap-4 sm:grid-cols-[96px_1fr]">
-        <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 overflow-hidden rounded-2xl border border-dashed border-border-strong text-xs text-subtle hover:border-primary/50 hover:text-foreground">
+        <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center gap-1 overflow-hidden rounded-md border border-dashed border-border-strong text-xs text-subtle hover:border-primary/50 hover:text-foreground">
           {f.image ? (
             <img src={f.image} alt="Token" className="h-full w-full object-cover" />
           ) : (
@@ -441,7 +443,7 @@ function StepLock({ f, set }: StepProps) {
       <div className="rounded-xl border border-primary/25 bg-primary/5 p-4">
         <div className="flex items-baseline justify-between">
           <span className="text-sm text-muted-foreground">Lock length</span>
-          <span className="font-display text-2xl font-semibold">{f.months} months</span>
+          <span className="font-mono text-2xl font-medium">{f.months} months</span>
         </div>
         <input
           type="range"
@@ -459,15 +461,15 @@ function StepLock({ f, set }: StepProps) {
         </div>
         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
           <div className="rounded-lg bg-background/60 p-2">
-            <div className="font-display text-base font-semibold">100%</div>
+            <div className="font-mono text-base font-medium">100%</div>
             <div className="text-subtle">of dev tokens</div>
           </div>
           <div className="rounded-lg bg-background/60 p-2">
-            <div className="font-display text-base font-semibold">{f.devBuy || 0} SOL</div>
+            <div className="font-mono text-base font-medium">{f.devBuy || 0} SOL</div>
             <div className="text-subtle">dev buy</div>
           </div>
           <div className="rounded-lg bg-background/60 p-2">
-            <div className="font-display text-base font-semibold">
+            <div className="font-mono text-base font-medium">
               {new Date(Date.now() + f.months * 30.44 * 864e5).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}
             </div>
             <div className="text-subtle">unlocks</div>
@@ -528,7 +530,7 @@ function StepReview({ f, goto }: { f: Form; goto: (n: number) => void }) {
 function Success({ f }: { f: Form }) {
   return (
     <div className="mx-auto max-w-lg py-10 text-center">
-      <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/15">
+      <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-[4px] bg-primary/15">
         <PartyPopper className="h-7 w-7 text-primary" />
       </span>
       <h1 className="mt-4 text-2xl font-semibold">${f.symbol} is live</h1>
