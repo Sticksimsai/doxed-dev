@@ -6,7 +6,7 @@ import { env, requireDb } from "./env";
 export const sql = postgres(requireDb(), {
   max: 10,
   idle_timeout: 30,
-  ssl: env.databaseUrl.includes("localhost") || env.databaseUrl.includes("127.0.0.1") ? false : "require",
+  ssl: env.databaseUrl.includes("localhost") || env.databaseUrl.includes("127.0.0.1") ? false : "prefer",
   onnotice: () => {},
 });
 
