@@ -96,6 +96,9 @@ function NavLinks() {
       <Link to="/launch" className={navBase} activeProps={{ className: navActive }}>
         Launch
       </Link>
+      <Link to="/builder" className={navBase} activeProps={{ className: navActive }}>
+        Builders
+      </Link>
       <Link to="/how-it-works" className={navBase} activeProps={{ className: navActive }}>
         How it works
       </Link>
@@ -179,7 +182,7 @@ function SiteFooter() {
           <DockButton label="Watchlist" icon={Star} soon />
           <DockButton label="Launch a token" icon={Rocket} to="/launch" />
           <DockButton label="How it works" icon={BookOpen} to="/how-it-works" />
-          <DockButton label="Public API" icon={Code2} soon />
+          <DockButton label="Builder API" icon={Code2} to="/builder" />
           <a href={X_URL} target="_blank" rel="noreferrer" aria-label="X" className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground hover:bg-raised hover:text-foreground">
             <XIcon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
           </a>

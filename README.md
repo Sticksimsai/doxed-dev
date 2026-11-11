@@ -44,6 +44,15 @@ npm run dev                      # UI on :5173, proxies /api to :8787
 | `HELIUS_API_KEY` | Reliable RPC for launches + fee-claim history (strongly recommended) |
 | `ANTHROPIC_API_KEY` | AI risk check on verifications + AI project summaries |
 
+## Builder API (per-dev AI keys)
+Doxed devs create up to 5 `dxd_…` keys at `/builder`. The server proxies them to one master OpenRouter key.
+- **Endpoint:** OpenAI-compatible at `https://<host>/api/v1` — `POST /chat/completions` (streaming supported), `GET /models`, `GET /key` (remaining credit).
+- **Security:** keys stored as SHA-256 hashes only, shown once; revoked instantly; stop working if the dev is flagged or not approved.
+- **Metering:** every request's real cost comes from OpenRouter's `usage.cost` (or the generation lookup if a stream is cut off) and is logged in `builder_usage`.
+- **Limits:** monthly credit per dev (`BUILDER_MONTHLY_CREDIT_USD`, default $5, override per dev in `dev_profiles.builder_credit_usd`),
+  `BUILDER_RPM` per key (60), `BUILDER_MAX_TOKENS` output cap (8192), optional `BUILDER_MODELS` allowlist.
+- **Setup:** set `OPENROUTER_API_KEY`. Put a hard credit limit on that key in the OpenRouter dashboard as a backstop.
+
 ## Background jobs (`server/jobs.ts`)
 | Job | Every | Needs |
 |---|---|---|

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronDown, Coins, EyeOff, Layers, Lock, Rocket, ShieldCheck, Sparkles } from "@/components/icons";
+import { ChevronDown, Code2, Coins, EyeOff, Layers, Lock, Rocket, ShieldCheck, Sparkles } from "@/components/icons";
 import { APP_NAME, LOCK_MIN_MONTHS } from "@/lib/brand";
 import { LAUNCHPADS } from "@/lib/mock";
 
@@ -28,6 +28,11 @@ const PILLARS = [
     icon: Coins,
     title: "Fee claim history",
     body: "Every creator-fee withdrawal is listed with its transaction, so you can see how and when the dev takes revenue.",
+  },
+  {
+    icon: Code2,
+    title: "Builder API",
+    body: "Doxed devs get their own API keys to hundreds of AI models through one OpenAI-compatible endpoint, with free monthly credit.",
   },
   {
     icon: EyeOff,

@@ -11,6 +11,8 @@ import { migrate, sql } from "./db";
 import { createNonce, endSession, requireWallet, sessionWallet, signInMessage, startSession, verifySignIn } from "./lib/auth";
 import { adminDecide, kydStatus, startVerification, syncFromDidit } from "./lib/kyd";
 import { verifyDiditWebhook } from "./lib/didit";
+import { chatCompletions, createKey, keyInfo, listKeys, models, revokeKey, usageSummary } from "./lib/builder";
+import { cors } from "hono/cors";
 import { IN_APP_LAUNCHPADS, buildCreateTx, buildLockTx, sendSigned, signatureStatus, uploadMetadata } from "./lib/launch";
 import { getDev, getToken, listDevsByIds, listTokens, tokensByDev } from "./lib/views";
 import { tokenSupply } from "./lib/solana";
@@ -346,6 +348,33 @@ api.get("/me/launches", requireWallet, async (c) => {
                          where p.wallet = ${c.get("wallet")} order by l.created_at desc`;
   return c.json(rows);
 });
+
+// ------------------------------------------------------------------ Builder API
+// OpenAI-compatible gateway: base URL https://<host>/api/v1, key "dxd_…".
+api.use("/v1/*", cors({ origin: "*", allowHeaders: ["authorization", "content-type"], allowMethods: ["GET", "POST", "OPTIONS"] }));
+api.post("/v1/chat/completions", chatCompletions);
+api.get("/v1/models", models);
+api.get("/v1/key", keyInfo);
+
+// Key management (signed-in, doxed devs)
+api.get("/builder/config", (c) =>
+  c.json({ enabled: !!env.openrouterKey, creditUsd: env.builderCreditUsd, rpm: env.builderRpm, maxKeys: env.builderMaxKeys, models: env.builderModels }),
+);
+api.get("/builder/keys", requireWallet, requireDoxed, async (c) => c.json(await listKeys(c.get("devId"))));
+api.post("/builder/keys", limit(10, 60_000), requireWallet, requireDoxed, async (c) => {
+  const b = z.object({ name: z.string().trim().min(1, "Give the key a name.").max(40) }).safeParse(await c.req.json().catch(() => ({})));
+  if (!b.success) return c.json({ error: b.error.issues[0].message }, 400);
+  try {
+    return c.json(await createKey(c.get("devId"), b.data.name));
+  } catch (e) {
+    return c.json({ error: (e as Error).message }, 400);
+  }
+});
+api.delete("/builder/keys/:id", requireWallet, requireDoxed, async (c) => {
+  const ok = await revokeKey(c.get("devId"), c.req.param("id")!).catch(() => false);
+  return ok ? c.json({ ok: true }) : c.json({ error: "Key not found" }, 404);
+});
+api.get("/builder/usage", requireWallet, requireDoxed, async (c) => c.json(await usageSummary(c.get("devId"))));
 
 api.onError((err, c) => {
   console.error("[api]", err);

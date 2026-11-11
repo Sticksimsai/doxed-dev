@@ -32,6 +32,14 @@ export const env = {
   adminWallets: (e.ADMIN_WALLETS ?? "").split(",").map((s) => s.trim()).filter(Boolean),
   /** Pinata JWT for Pump.fun metadata (IPFS). LetsBonk uses its own free uploader. */
   pinataJwt: e.PINATA_JWT ?? "",
+  /** Builder API: master OpenRouter key that every dev key routes through. */
+  openrouterKey: e.OPENROUTER_API_KEY ?? "",
+  builderCreditUsd: Number(e.BUILDER_MONTHLY_CREDIT_USD ?? 5),
+  builderRpm: Number(e.BUILDER_RPM ?? 60),
+  builderMaxTokens: Number(e.BUILDER_MAX_TOKENS ?? 8192),
+  builderMaxKeys: Number(e.BUILDER_MAX_KEYS ?? 5),
+  /** Optional comma-separated model allowlist, e.g. "openai/gpt-5-mini,anthropic/claude-haiku-5-5". Empty = all. */
+  builderModels: (e.BUILDER_MODELS ?? "").split(",").map((s) => s.trim()).filter(Boolean),
   /** Priority fee (SOL) for create transactions. */
   priorityFeeSol: Number(e.PRIORITY_FEE_SOL ?? 0.0005),
   /** Lets the mock provider run in production for a staging/demo deploy. Remove once a real provider is connected. */
