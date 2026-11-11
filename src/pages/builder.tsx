@@ -44,7 +44,7 @@ export function BuilderPage() {
   const signIn = useSignIn();
   const qc = useQueryClient();
   const doxed = me?.dev?.status === "approved";
-  const base = `${typeof location !== "undefined" && location.protocol.startsWith("http") ? location.origin : SITE_URL}/api/v1`;
+  const base = `${!USE_MOCK && typeof location !== "undefined" && location.protocol.startsWith("http") ? location.origin : SITE_URL}/api/v1`;
 
   const { data: cfg } = useQuery({
     queryKey: ["builder-config"],
