@@ -25,14 +25,14 @@ let mockKeys: Key[] = [
   { id: "k1", name: "trading bot", prefix: "dxd_7hQm2xKp", created_at: new Date(now - 6 * 864e5).toISOString(), last_used_at: new Date(now - 4e5).toISOString(), month_usd: 1.284, month_requests: 812 },
 ];
 const mockUsage: Usage = {
-  creditUsd: 5,
+  creditUsd: 100,
   spentUsd: 1.284,
   requests: 812,
   tokens: { prompt: 410_220, completion: 96_410 },
   byModel: [
     { model: "openai/gpt-5-mini", requests: 640, usd: 0.71, tokens: 380_000 },
-    { model: "anthropic/claude-haiku-5-5", requests: 150, usd: 0.48, tokens: 110_000 },
-    { model: "google/gemini-3-flash", requests: 22, usd: 0.094, tokens: 16_630 },
+    { model: "anthropic/claude-sonnet-4.5", requests: 150, usd: 0.48, tokens: 110_000 },
+    { model: "google/gemini-2.5-flash", requests: 22, usd: 0.094, tokens: 16_630 },
   ],
   daily: Array.from({ length: 30 }, (_, i) => ({ day: new Date(now - (29 - i) * 864e5).toISOString(), requests: Math.round(10 + 40 * Math.abs(Math.sin(i / 3))), usd: 0 })),
 };
@@ -48,7 +48,7 @@ export function BuilderPage() {
 
   const { data: cfg } = useQuery({
     queryKey: ["builder-config"],
-    queryFn: () => (USE_MOCK ? Promise.resolve<Cfg>({ enabled: true, creditUsd: 5, rpm: 60, maxKeys: 5, models: [] }) : http<Cfg>("/builder/config")),
+    queryFn: () => (USE_MOCK ? Promise.resolve<Cfg>({ enabled: true, creditUsd: 100, rpm: 60, maxKeys: 5, models: [] }) : http<Cfg>("/builder/config")),
   });
   const { data: keys } = useQuery({
     queryKey: ["builder-keys"],
@@ -116,9 +116,17 @@ export function BuilderPage() {
             </h1>
             <p className="font-prose mt-4 max-w-lg text-[15px] leading-relaxed text-muted-foreground">
               Every doxed dev gets API keys to hundreds of AI models — GPT, Claude, Gemini, Llama and more — through one
-              OpenAI-compatible endpoint, with <span className="text-foreground">${(cfg?.creditUsd ?? 5).toFixed(0)} of free credit every month</span>.
+              OpenAI-compatible endpoint, with <span className="text-foreground">${(cfg?.creditUsd ?? 100).toFixed(0)} of free compute every month</span>.
               Ship your bot, agent or app without setting up billing anywhere.
             </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <Link to="/builder/docs" className="btn-primary">
+                Read the docs
+              </Link>
+              <a href="#keys" className="btn-ghost">
+                Get a key
+              </a>
+            </div>
           </div>
           <div className="glass rounded-xl p-4 font-mono text-[12.5px] leading-relaxed">
             <div className="text-subtle">$ curl {base.replace(/^https?:\/\//, "")}/chat/completions \</div>
@@ -168,7 +176,7 @@ export function BuilderPage() {
           </section>
 
           {/* keys */}
-          <section className="card p-5">
+          <section id="keys" className="card scroll-mt-32 p-5">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 className="font-display text-xl font-medium">API keys</h2>
@@ -338,7 +346,7 @@ ai = OpenAI(
 )
 
 res = ai.chat.completions.create(
-    model="anthropic/claude-haiku-5-5",
+    model="google/gemini-2.5-flash",
     messages=[{"role": "user", "content": "gm"}],
 )
 print(res.choices[0].message.content)`,
@@ -373,7 +381,10 @@ print(res.choices[0].message.content)`,
       </div>
       <div className="border-t border-border px-4 py-2.5 text-xs text-subtle">
         Works with any OpenAI-compatible SDK or framework (LangChain, Vercel AI SDK, LlamaIndex…). Streaming, tools and JSON mode pass
-        straight through.
+        straight through.{" "}
+        <Link to="/builder/docs" className="text-foreground underline decoration-dotted underline-offset-4">
+          Full API reference →
+        </Link>
       </div>
     </section>
   );

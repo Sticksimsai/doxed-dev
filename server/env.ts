@@ -34,12 +34,17 @@ export const env = {
   pinataJwt: e.PINATA_JWT ?? "",
   /** Builder API: master OpenRouter key that every dev key routes through. */
   openrouterKey: e.OPENROUTER_API_KEY ?? "",
-  builderCreditUsd: Number(e.BUILDER_MONTHLY_CREDIT_USD ?? 5),
+  builderCreditUsd: Number(e.BUILDER_MONTHLY_CREDIT_USD ?? 100),
   builderRpm: Number(e.BUILDER_RPM ?? 60),
   builderMaxTokens: Number(e.BUILDER_MAX_TOKENS ?? 8192),
   builderMaxKeys: Number(e.BUILDER_MAX_KEYS ?? 5),
   /** Optional comma-separated model allowlist, e.g. "openai/gpt-5-mini,anthropic/claude-haiku-5-5". Empty = all. */
   builderModels: (e.BUILDER_MODELS ?? "").split(",").map((s) => s.trim()).filter(Boolean),
+  /** Platform launch fee (SOL), collected in the lock transaction. 0 = off. */
+  launchFeeSol: Number(e.LAUNCH_FEE_SOL ?? 0),
+  treasuryWallet: e.TREASURY_WALLET ?? "",
+  /** Origin of the embedded ID-scan page (set if you put verification on your own subdomain). */
+  kydFrameOrigin: e.KYD_FRAME_ORIGIN ?? "https://verify.didit.me",
   /** Priority fee (SOL) for create transactions. */
   priorityFeeSol: Number(e.PRIORITY_FEE_SOL ?? 0.0005),
   /** Lets the mock provider run in production for a staging/demo deploy. Remove once a real provider is connected. */

@@ -7,6 +7,7 @@ import { LaunchPage } from "./pages/launch";
 import { HowItWorksPage } from "./pages/how-it-works";
 import { AdminPage } from "./pages/admin";
 import { BuilderPage } from "./pages/builder";
+import { BuilderDocsPage } from "./pages/builder-docs";
 
 const root = createRootRoute({ component: AppShell });
 
@@ -18,6 +19,7 @@ const routeTree = root.addChildren([
   createRoute({ getParentRoute: () => root, path: "/how-it-works", component: HowItWorksPage }),
   createRoute({ getParentRoute: () => root, path: "/admin", component: AdminPage }),
   createRoute({ getParentRoute: () => root, path: "/builder", component: BuilderPage }),
+  createRoute({ getParentRoute: () => root, path: "/builder/docs", component: BuilderDocsPage }),
 ]);
 
 export const router = createRouter({

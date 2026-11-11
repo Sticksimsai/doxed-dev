@@ -158,12 +158,32 @@ async function generationCost(id: string) {
   return 0;
 }
 
+// ------------------------------------------------------------------ white-label
+// Responses are rewritten so builders only ever see Doxed: our own ids, no upstream provider
+// fields, no upstream names in errors or stream keep-alives.
+const scrub = (t: string) => t.replace(/open\s?router(\.ai)?/gi, "Doxed");
+const mapId = (id: unknown) => (typeof id === "string" ? `dxd-${id.replace(/^gen-/, "")}` : id);
+function clean(j: any) {
+  if (!j || typeof j !== "object") return j;
+  if (j.id) j.id = mapId(j.id);
+  delete j.provider;
+  if (j.usage) {
+    delete j.usage.cost_details;
+    delete j.usage.is_byok;
+  }
+  if (j.error) {
+    j.error = { message: scrub(String(j.error.message ?? "Upstream error")), type: j.error.type ?? "upstream_error", code: j.error.code ?? j.error.type ?? "upstream_error" };
+  }
+  for (const ch of j.choices ?? []) delete ch.native_finish_reason;
+  return j;
+}
+
 // ------------------------------------------------------------------ proxy
 const upstreamHeaders = () => ({
   authorization: `Bearer ${env.openrouterKey}`,
   "content-type": "application/json",
   "HTTP-Referer": env.publicUrl,
-  "X-Title": "Doxed Dev Builder API",
+  "X-Title": "Doxed Dev",
 });
 
 export async function chatCompletions(c: Context) {
@@ -202,7 +222,8 @@ export async function chatCompletions(c: Context) {
     record(a, { model: json?.model ?? body.model, usage: json?.usage, status: up.status, started, stream: false, genId: json?.id }).catch((e) =>
       console.error("[builder] record", e.message),
     );
-    return new Response(text, { status: up.status, headers: { "content-type": up.headers.get("content-type") ?? "application/json" } });
+    const out = json ? JSON.stringify(clean(json)) : JSON.stringify({ error: { message: scrub(text.slice(0, 300)) || "Upstream error", type: "upstream_error", code: "upstream_error" } });
+    return new Response(out, { status: up.status, headers: { "content-type": "application/json" } });
   }
 
   // Streaming: pass bytes straight through, while watching the SSE for the id and the final usage chunk.
@@ -218,28 +239,40 @@ export async function chatCompletions(c: Context) {
     done = true;
     record(a, { model: model ?? body.model, usage, status: up.status, started, stream: true, genId }).catch((e) => console.error("[builder] record", e.message));
   };
+  const enc = new TextEncoder();
+  const rewrite = (raw: string) => {
+    const line = raw.trimEnd();
+    if (line.startsWith(":")) return ": keep-alive"; // upstream keep-alive comments carry its name
+    if (!line.startsWith("data:")) return line;
+    const payload = line.slice(5).trim();
+    if (payload === "[DONE]") return "data: [DONE]";
+    try {
+      const j = JSON.parse(payload);
+      genId ??= j.id;
+      model ??= j.model;
+      if (j.usage) usage = { ...j.usage };
+      return `data: ${JSON.stringify(clean(j))}`;
+    } catch {
+      return `data: ${scrub(payload)}`;
+    }
+  };
   const out = new ReadableStream<Uint8Array>({
     async pull(ctrl) {
       const { value, done: end } = await reader.read();
       if (end) {
+        if (buf) ctrl.enqueue(enc.encode(rewrite(buf) + "\n"));
         finish();
         ctrl.close();
         return;
       }
       buf += dec.decode(value, { stream: true });
       let i: number;
+      let chunk = "";
       while ((i = buf.indexOf("\n")) >= 0) {
-        const line = buf.slice(0, i).trim();
+        chunk += rewrite(buf.slice(0, i)) + "\n";
         buf = buf.slice(i + 1);
-        if (!line.startsWith("data:") || line.includes("[DONE]")) continue;
-        try {
-          const j = JSON.parse(line.slice(5));
-          genId ??= j.id;
-          model ??= j.model;
-          if (j.usage) usage = j.usage;
-        } catch {}
       }
-      ctrl.enqueue(value);
+      if (chunk) ctrl.enqueue(enc.encode(chunk));
     },
     async cancel() {
       await reader.cancel().catch(() => {});
@@ -257,8 +290,20 @@ export async function models(c: Context) {
   if (!modelsCache || Date.now() - modelsCache.at > 10 * 60_000) {
     const r = await fetch(`${OR}/models`, { headers: upstreamHeaders() }).catch(() => null);
     if (!r?.ok) return oaiError(c, 502, "Couldn't load the model list.", "upstream_error");
-    const j = (await r.json()) as { data: { id: string }[] };
-    modelsCache = { at: Date.now(), data: { object: "list", data: env.builderModels.length ? j.data.filter((m) => env.builderModels.includes(m.id)) : j.data } };
+    const j = (await r.json()) as { data: { id: string; name?: string; created?: number; context_length?: number; pricing?: { prompt?: string; completion?: string }; architecture?: { input_modalities?: string[]; output_modalities?: string[] }; supported_parameters?: string[] }[] };
+    const list = (env.builderModels.length ? j.data.filter((m) => env.builderModels.includes(m.id)) : j.data).map((m) => ({
+      id: m.id,
+      object: "model",
+      created: m.created ?? 0,
+      owned_by: m.id.split("/")[0],
+      name: m.name,
+      context_length: m.context_length,
+      pricing: m.pricing ? { prompt: m.pricing.prompt, completion: m.pricing.completion } : undefined,
+      input_modalities: m.architecture?.input_modalities,
+      output_modalities: m.architecture?.output_modalities,
+      supported_parameters: m.supported_parameters,
+    }));
+    modelsCache = { at: Date.now(), data: { object: "list", data: list } };
   }
   return c.json(modelsCache.data);
 }

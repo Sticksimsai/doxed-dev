@@ -194,7 +194,7 @@ const SEEDS: Seed[] = [
         "The dev is fully public (name and LinkedIn disclosed) and has one previous launch with its lock honoured.",
       ],
       recent: [
-        { at: iso(2 * D), text: "Shipped v0.9 with Jupiter limit-order support (announced on X)." },
+        { at: iso(2 * D), text: "Shipped v0.9 with on-chain limit-order support (announced on X)." },
         { at: iso(6 * D), text: "Website added a docs section and an agent template gallery." },
         { at: iso(11 * D), text: "Partnership thread with a Solana RPC provider for free agent RPC credits." },
       ],
@@ -418,7 +418,7 @@ function buildToken(s: Seed, i: number): Token {
     mintAuthorityOff: true,
     freezeAuthorityOff: true,
     lock: {
-      provider: "Streamflow",
+      provider: "onchain",
       contract: b58(2000 + i),
       amount: Math.round((supply * s.lockPctSupply) / 100),
       pctOfDevAllocation: 100,

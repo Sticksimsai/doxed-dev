@@ -4,6 +4,8 @@
 //   3. lock      → Streamflow token lock for 100% of the dev wallet's balance, non-cancellable
 import {
   ComputeBudgetProgram,
+  LAMPORTS_PER_SOL,
+  SystemProgram,
   Connection,
   Keypair,
   PublicKey,
@@ -50,7 +52,7 @@ export async function uploadMetadata(m: MetaInput): Promise<{ uri: string; image
     const fd = new FormData();
     fd.append("image", m.image, m.imageName);
     const img = await fetch("https://nft-storage.letsbonk22.workers.dev/upload/img", { method: "POST", body: fd });
-    if (!img.ok) throw new Error("LetsBonk image upload failed");
+    if (!img.ok) throw new Error("Image upload failed — try a smaller PNG or JPG.");
     const image = (await img.text()).trim();
     const meta = await fetch("https://nft-storage.letsbonk22.workers.dev/upload/meta", {
       method: "POST",
@@ -66,10 +68,10 @@ export async function uploadMetadata(m: MetaInput): Promise<{ uri: string; image
         telegram: m.telegram ?? "",
       }),
     });
-    if (!meta.ok) throw new Error("LetsBonk metadata upload failed");
+    if (!meta.ok) throw new Error("Couldn't save token details — try again.");
     return { uri: (await meta.text()).trim(), image };
   }
-  if (!env.pinataJwt) throw new Error("Pump.fun launches need PINATA_JWT set on the server.");
+  if (!env.pinataJwt) throw new Error("Pump.fun launches aren't enabled yet — LetsBonk works now.");
   const image = await pinata(m.image, m.imageName);
   const json = JSON.stringify({
     name: m.name,
@@ -144,7 +146,15 @@ export async function buildLockTx(p: { wallet: string; mint: string; months: num
   const msg = new TransactionMessage({
     payerKey: owner,
     recentBlockhash: blockhash,
-    instructions: [ComputeBudgetProgram.setComputeUnitLimit({ units: 300_000 }), ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 50_000 }), ...ixs],
+    instructions: [
+      ComputeBudgetProgram.setComputeUnitLimit({ units: 300_000 }),
+      ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 50_000 }),
+      ...ixs,
+      // Platform launch fee, paid once with the lock (covers Builder API compute + infra).
+      ...(env.launchFeeSol > 0 && env.treasuryWallet
+        ? [SystemProgram.transfer({ fromPubkey: owner, toPubkey: new PublicKey(env.treasuryWallet), lamports: Math.round(env.launchFeeSol * LAMPORTS_PER_SOL) })]
+        : []),
+    ],
   }).compileToV0Message();
   const tx = new VersionedTransaction(msg);
   if (metadata) tx.sign([metadata]);
@@ -193,7 +203,7 @@ export async function verifyLock(mint: string, wallet: string, minMonths: number
   for (const id of ids) {
     const s = await client.getOne({ id }).catch(() => null);
     if (!s || s.mint !== mint || s.sender !== wallet || s.closed) continue;
-    if (s.cancelableBySender || s.cancelableByRecipient || s.canTopup) return { ok: false, reason: "That Streamflow stream can be cancelled or topped up — it must be a plain token lock." };
+    if (s.cancelableBySender || s.cancelableByRecipient || s.canTopup) return { ok: false, reason: "That lock can be cancelled or topped up — it must be a plain, non-cancellable lock." };
     const unlock = Math.max(s.end, s.cliff);
     if (unlock < minEnd) return { ok: false, reason: `The lock unlocks too early — minimum term is ${minMonths} months.` };
     total = total.add(s.depositedAmount.sub(s.withdrawnAmount));
@@ -201,7 +211,7 @@ export async function verifyLock(mint: string, wallet: string, minMonths: number
     start = Math.min(start, s.createdAt || s.start);
     first ??= id;
   }
-  if (!first || total.lten(1)) return { ok: false, reason: "No Streamflow lock from your wallet was found for this token yet." };
+  if (!first || total.lten(1)) return { ok: false, reason: "No lock from your wallet was found for this token yet." };
 
   const supply = await c.getTokenSupply(mintPk);
   const dec = supply.value.decimals;

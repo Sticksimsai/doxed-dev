@@ -356,7 +356,7 @@ function StepDoxed({ f, set }: StepProps) {
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="font-prose text-xs text-subtle">
-              By continuing you consent to an ID and biometric check by our verification partner (Didit).
+              By continuing you consent to an ID and biometric check by our secure verification partner.
             </p>
             <button className="btn-primary" disabled={f.alias.length < 3 || starting} onClick={start}>
               {starting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
@@ -527,7 +527,7 @@ function StepLock({ f, set }: StepProps) {
   const unlock = new Date(Date.now() + f.months * 30.44 * 864e5).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
   return (
     <div>
-      <StepTitle title="Lock your bag" desc={`Everything your dev buy gets is locked on Streamflow — no cancel button, no early exit. Minimum ${LOCK_MIN_MONTHS} months.`} />
+      <StepTitle title="Lock your bag" desc={`Everything your dev buy gets is locked on-chain — no cancel button, no early exit. Minimum ${LOCK_MIN_MONTHS} months.`} />
       <div className="rounded-lg border border-border-strong p-4">
         <div className="flex items-baseline justify-between">
           <span className="text-sm text-muted-foreground">Lock length</span>
@@ -593,7 +593,7 @@ function StepLaunch({ f, goto }: { f: Form; goto: (n: number) => void }) {
   const lp = LAUNCHPADS.find((l) => l.id === f.launchpad);
   const { data: cfg } = useQuery({
     queryKey: ["launch-config"],
-    queryFn: () => (USE_MOCK ? Promise.resolve({ pumpReady: true }) : http<{ pumpReady: boolean }>("/launch/config")),
+    queryFn: () => (USE_MOCK ? Promise.resolve({ pumpReady: true, launchFeeSol: 0.1 }) : http<{ pumpReady: boolean; launchFeeSol: number }>("/launch/config")),
   });
   const [at, setAt] = useState(-1);
   const [log, setLog] = useState<string[]>([]);
@@ -689,7 +689,7 @@ function StepLaunch({ f, goto }: { f: Form; goto: (n: number) => void }) {
       setAt(5);
       say(`  sent ${sig2.slice(0, 10)}… confirming`);
       await waitForConfirmation(sig2);
-      say(`✓ locked → streamflow ${lock.lockId.slice(0, 8)}…`);
+      say(`✓ locked → contract ${lock.lockId.slice(0, 8)}…`);
 
       setAt(6);
       for (let i = 0; ; i++) {
@@ -749,6 +749,7 @@ function StepLaunch({ f, goto }: { f: Form; goto: (n: number) => void }) {
             ["Launchpad", lp?.name, 1],
             ["Dev buy", `${f.devBuy} SOL`, 2],
             ["Lock", `100% for ${f.months} months`, 3],
+            ...(cfg?.launchFeeSol ? ([["Platform fee", `${cfg.launchFeeSol} SOL · includes $100/mo Builder API credit`, 4]] as [string, ReactNode, number][]) : []),
           ] as [string, ReactNode, number][]
         ).map(([l, v, s]) => (
           <div key={l} className="flex items-center gap-3 px-4 py-2.5">

@@ -53,7 +53,7 @@ export function AdminPage() {
     <div className="mx-auto max-w-5xl space-y-4">
       <h1 className="font-display text-3xl font-semibold">Verification review</h1>
       <p className="font-prose text-sm text-muted-foreground">
-        Held and rejected verifications. Images stay with Didit — open the session in the Didit console to see them.
+        Held and rejected verifications. Images stay with the verification provider — open the session in the verification console to see them.
       </p>
       {isLoading && <div className="text-sm text-subtle">Loading…</div>}
       {error && <div className="text-sm text-danger">{(error as Error).message}</div>}

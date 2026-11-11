@@ -68,7 +68,7 @@ export async function evaluate(d: DiditDecision, isDuplicate: (hash: string) => 
   const review: string[] = [];
   const st = up(d.status);
   if (st === "DECLINED") reject.push("The ID check or face scan didn't pass.");
-  if (st === "IN REVIEW") review.push("Didit flagged this session for manual review.");
+  if (st === "IN REVIEW") review.push("Flagged by automated checks for manual review.");
   if (up(idv?.status) !== "APPROVED") reject.push("The ID document couldn't be verified as genuine.");
   if (up(live?.status) !== "APPROVED" || (live?.score ?? 0) < MIN_LIVENESS) reject.push("The face scan didn't pass the liveness check.");
   if (up(face?.status) !== "APPROVED" || (face?.score ?? 0) < MIN_FACE) reject.push("Your face didn't match the photo on the ID.");

@@ -76,7 +76,7 @@ function toToken(r: Row, series: number[] | undefined, claims: Token["feeClaims"
     mintAuthorityOff: r.mint_authority_off ?? true,
     freezeAuthorityOff: r.freeze_authority_off ?? true,
     lock: {
-      provider: "Streamflow",
+      provider: "onchain",
       contract: r.lock_contract,
       amount: Number(r.lock_amount),
       pctOfDevAllocation: 100,

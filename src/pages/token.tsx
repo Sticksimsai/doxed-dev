@@ -164,9 +164,7 @@ function MarketCard({ t }: { t: Token }) {
     <section className="overflow-hidden rounded-2xl border border-border bg-card">
       <div className="flex items-center justify-between border-b border-border bg-secondary/40 px-3 py-2">
         <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Price chart</h2>
-        <a href={`https://dexscreener.com/solana/${t.mint}`} target="_blank" rel="noreferrer" className="text-xs text-muted-foreground hover:text-foreground">
-          Open in DexScreener ↗
-        </a>
+        <span className="font-mono text-[11px] text-subtle">7d · live</span>
       </div>
       <div className="bg-background px-1 pt-2">
         <PriceChart data={t.series} up={t.change["24h"] >= 0} />
@@ -441,7 +439,7 @@ function LockCard({ t }: { t: Token }) {
       id="lock"
       className="scroll-mt-20"
       title="Dev lock"
-      subtitle="Streamflow vesting contract"
+      subtitle="On-chain, non-cancellable"
       icon={<Lock />}
       right={<span className="chip border-foreground/40 font-pixel text-[9px] uppercase text-foreground">● Active</span>}
     >
@@ -471,8 +469,8 @@ function LockCard({ t }: { t: Token }) {
         <div className="flex items-center justify-between">
           <dt className="text-subtle">Contract</dt>
           <dd>
-            <a href={`https://app.streamflow.finance/contract/solana/mainnet/${l.contract}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-mono text-xs text-foreground underline decoration-dotted underline-offset-4">
-              {l.provider} · {short(l.contract)} <ExternalLink className="h-3 w-3" />
+            <a href={`https://solscan.io/account/${l.contract}`} target="_blank" rel="noreferrer" title="Verify the lock on-chain" className="inline-flex items-center gap-1 font-mono text-xs text-foreground underline decoration-dotted underline-offset-4">
+              {short(l.contract)} <ExternalLink className="h-3 w-3" />
             </a>
           </dd>
         </div>

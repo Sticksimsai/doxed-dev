@@ -11,7 +11,10 @@ async function didit<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { "x-api-key": env.diditApiKey, "content-type": "application/json", ...init?.headers },
   });
   const body = await res.text();
-  if (!res.ok) throw new Error(`Didit ${res.status}: ${body.slice(0, 200)}`);
+  if (!res.ok) {
+    console.error(`[kyd] provider ${res.status}: ${body.slice(0, 300)}`);
+    throw new Error("The verification service is unavailable right now — please try again in a minute.");
+  }
   return JSON.parse(body) as T;
 }
 

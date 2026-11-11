@@ -148,7 +148,7 @@ export function TerminalDemo({ className }: { className?: string }) {
 }
 
 const EVENTS = [
-  "LOCK_CREATED  ORBIT  41.0M → streamflow · 12mo",
+  "LOCK_CREATED  ORBIT  41.0M → locked · 12mo",
   "DEV_DOXED     anon-K9m · private",
   "FEE_CLAIM     PAWS   2.34 SOL",
   "LAUNCH        SHIFT  pump.fun",

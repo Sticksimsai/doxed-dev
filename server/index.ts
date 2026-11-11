@@ -28,7 +28,8 @@ app.use("*", secureHeaders({ contentSecurityPolicy: undefined, crossOriginEmbedd
 // The ID + face scan runs in an iframe from verify.didit.me and needs camera access.
 app.use("*", async (c, next) => {
   await next();
-  c.header("Permissions-Policy", 'camera=(self "https://verify.didit.me"), microphone=(self "https://verify.didit.me"), fullscreen=(self "https://verify.didit.me")');
+  const o = env.kydFrameOrigin;
+  c.header("Permissions-Policy", `camera=(self "${o}"), microphone=(self "${o}"), fullscreen=(self "${o}")`);
 });
 
 // --- tiny per-IP rate limiter for write endpoints
@@ -191,7 +192,7 @@ const requireDoxed = async (c: any, next: any) => {
 };
 
 api.get("/launch/config", (c) =>
-  c.json({ inApp: IN_APP_LAUNCHPADS, pumpReady: !!env.pinataJwt, minDevBuySol: 0.01, minLockMonths: 12 }),
+  c.json({ inApp: IN_APP_LAUNCHPADS, pumpReady: !!env.pinataJwt, minDevBuySol: 0.01, minLockMonths: 12, launchFeeSol: env.treasuryWallet ? env.launchFeeSol : 0 }),
 );
 
 /** Step 1: image + details → IPFS metadata. */
@@ -329,7 +330,7 @@ api.post("/launches", limit(10, 60_000), requireWallet, async (c) => {
   } catch {
     return c.json({ error: "This token is already registered." }, 409);
   }
-  return c.json({ mint: b.mint, stage: "pending_lock", next: `Lock 100% of your ${b.symbol} on Streamflow for ${b.lockMonths}+ months, then verify.` });
+  return c.json({ mint: b.mint, stage: "pending_lock", next: `Lock 100% of your ${b.symbol} in an on-chain lock for ${b.lockMonths}+ months, then verify.` });
 });
 
 api.post("/launches/:mint/verify-lock", limit(10, 60_000), requireWallet, async (c) => {

@@ -17,7 +17,7 @@ const PILLARS = [
   {
     icon: Lock,
     title: `100% locked, ${LOCK_MIN_MONTHS}+ months`,
-    body: "Every token the dev holds at launch is locked on-chain with Streamflow. The contract is public and linked on every token page.",
+    body: "Every token the dev holds at launch is locked in a non-cancellable on-chain contract. The contract is public and linked on every token page.",
   },
   {
     icon: Sparkles,
@@ -32,7 +32,7 @@ const PILLARS = [
   {
     icon: Code2,
     title: "Builder API",
-    body: "Doxed devs get their own API keys to hundreds of AI models through one OpenAI-compatible endpoint, with free monthly credit.",
+    body: "Doxed devs get their own API keys to hundreds of AI models through one OpenAI-compatible endpoint, with up to $100 of free compute a month.",
   },
   {
     icon: EyeOff,
@@ -44,7 +44,7 @@ const PILLARS = [
 const FAQ = [
   {
     q: "Who can see a dev's identity documents?",
-    a: `The ID and face scans are handled by our verification partner, Didit, and never stored on ${APP_NAME}'s servers. We keep only the result, the dev's name and date of birth privately, and a one-way fingerprint of the ID number so the same ID can't be used twice. Holders only ever see the badge and what the dev chooses to reveal.`,
+    a: `The ID and face scans are handled by our secure verification partner and never stored on ${APP_NAME}'s servers. We keep only the result, the dev's name and date of birth privately, and a one-way fingerprint of the ID number so the same ID can't be used twice. Holders only ever see the badge and what the dev chooses to reveal.`,
   },
   {
     q: "How do you catch fake IDs?",

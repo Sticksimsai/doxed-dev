@@ -55,7 +55,7 @@ export interface Dev {
 }
 
 export interface Lock {
-  provider: "Streamflow";
+  provider: "onchain";
   contract: string;
   amount: number; // tokens locked
   pctOfDevAllocation: number; // always 100 by policy

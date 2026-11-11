@@ -43,13 +43,16 @@ npm run dev                      # UI on :5173, proxies /api to :8787
 | `ADMIN_WALLETS` | Comma-separated wallets that can approve held verifications at `/admin` |
 | `HELIUS_API_KEY` | Reliable RPC for launches + fee-claim history (strongly recommended) |
 | `ANTHROPIC_API_KEY` | AI risk check on verifications + AI project summaries |
+| `OPENROUTER_API_KEY` | Master key behind the Builder API (set a hard limit on it in its dashboard) |
+| `LAUNCH_FEE_SOL` + `TREASURY_WALLET` | Platform fee collected in the lock transaction (shown to devs before they launch). Off until both are set. |
+| `KYD_FRAME_ORIGIN` | Origin of the embedded ID-scan page, if you move it to your own subdomain (default: the provider's) |
 
 ## Builder API (per-dev AI keys)
 Doxed devs create up to 5 `dxd_…` keys at `/builder`. The server proxies them to one master OpenRouter key.
 - **Endpoint:** OpenAI-compatible at `https://<host>/api/v1` — `POST /chat/completions` (streaming supported), `GET /models`, `GET /key` (remaining credit).
 - **Security:** keys stored as SHA-256 hashes only, shown once; revoked instantly; stop working if the dev is flagged or not approved.
 - **Metering:** every request's real cost comes from OpenRouter's `usage.cost` (or the generation lookup if a stream is cut off) and is logged in `builder_usage`.
-- **Limits:** monthly credit per dev (`BUILDER_MONTHLY_CREDIT_USD`, default $5, override per dev in `dev_profiles.builder_credit_usd`),
+- **Limits:** monthly credit per dev (`BUILDER_MONTHLY_CREDIT_USD`, default $100, override per dev in `dev_profiles.builder_credit_usd`),
   `BUILDER_RPM` per key (60), `BUILDER_MAX_TOKENS` output cap (8192), optional `BUILDER_MODELS` allowlist.
 - **Setup:** set `OPENROUTER_API_KEY`. Put a hard credit limit on that key in the OpenRouter dashboard as a backstop.
 
@@ -74,3 +77,11 @@ dashboard to switch on fee tracking and AI.
 - In-app creation for Raydium LaunchLab and Meteora DBC
 - Proof of X / GitHub account ownership (fields exist, verification flow pending)
 - Image upload storage
+
+## White-labelling
+Users only ever see Doxed Dev. Provider names are kept out of the UI, API responses and error messages:
+the Builder API rewrites response ids (`dxd-…`), strips upstream-only fields, neutralises stream keep-alives and scrubs
+upstream names from errors; `/v1/models` is re-shaped to a neutral schema. The only third-party surface left is the
+embedded ID-scan page — turn on white-label branding and a custom domain in the verification provider's console,
+then set `KYD_FRAME_ORIGIN`. Launchpad names (Pump.fun, LetsBonk…) are shown on purpose — devs pick them. Block-explorer
+links are kept so anyone can verify locks and fee claims on-chain.
