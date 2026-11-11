@@ -10,4 +10,6 @@ export default defineConfig(({ mode }) => ({
   plugins: [react(), tailwindcss(), ...(mode === "preview" ? [viteSingleFile()] : [])],
   resolve: { alias: { "@": path.resolve(import.meta.dirname, "src") } },
   build: { outDir: mode === "preview" ? "dist-preview" : "dist" },
+  // Local dev: forward API calls to the Node server (npm run dev:server).
+  server: { proxy: { "/api": "http://localhost:8787" } },
 }));

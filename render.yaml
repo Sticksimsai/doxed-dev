@@ -1,10 +1,36 @@
+# Render Blueprint: one Node web service (API + frontend) and a Postgres database.
 services:
   - type: web
-    runtime: static
+    runtime: node
     name: doxed-dev
-    buildCommand: npm ci && npm run build
-    staticPublishPath: dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    plan: free
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: doxed-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: SEED_DEMO
+        value: "true"
+      - key: KYD_PROVIDER
+        value: mock
+      - key: ALLOW_MOCK_KYD # staging only — remove when a real KYC provider is connected
+        value: "true"
+      - key: HELIUS_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: X_BEARER_TOKEN
+        sync: false
+
+databases:
+  - name: doxed-db
+    plan: free

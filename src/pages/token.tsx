@@ -200,6 +200,16 @@ function Row({ label, value }: { label: string; value: ReactNode }) {
 
 function AiSummaryCard({ t }: { t: Token }) {
   const { ai } = t;
+  if (!ai)
+    return (
+      <SectionCard title="AI live summary" subtitle="What this project is, read from its X, website and GitHub" icon={<Zap />}>
+        <div className="font-mono text-[13px] text-muted-foreground">
+          <span className="text-subtle">$ </span>doxed summarise {t.symbol.toLowerCase()} — reading sources
+          <Cursor />
+        </div>
+        <p className="font-prose mt-2 text-xs text-subtle">The first summary appears a few minutes after launch, then refreshes regularly.</p>
+      </SectionCard>
+    );
   return (
     <SectionCard
       title="AI live summary"
@@ -479,7 +489,7 @@ function FeesCard({ t, claimed }: { t: Token; claimed: number }) {
     <SectionCard id="fees" className="scroll-mt-20" title="Dev claim fees" subtitle="On-chain creator fee claims" icon={<Coins />}>
       <div className="grid grid-cols-2 gap-2">
         <Box label="Claimed total" value={sol(claimed)} />
-        <Box label="Waiting to claim" value={sol(t.feesUnclaimedSol)} />
+        <Box label="Claims" value={String(t.feeClaims.length)} />
       </div>
       <p className="mt-3 text-xs text-muted-foreground">
         Trading fees the dev has withdrawn. Claiming fees is normal — sudden large claims right before a dump are worth noticing.

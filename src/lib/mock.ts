@@ -390,7 +390,7 @@ function buildToken(s: Seed, i: number): Token {
   const claimsList = claims(i * 13 + 5, s.claimCount, s.mcap > 1e6 ? 9 : 2.5).filter(
     (c) => Date.parse(c.at) > NOW - s.ageH * H,
   );
-  const sources: Token["ai"]["sources"] = [];
+  const sources: NonNullable<Token["ai"]>["sources"] = [];
   if (s.links.x) sources.push({ kind: "x", label: "@" + s.links.x.split("/").pop(), url: s.links.x });
   if (s.links.website) sources.push({ kind: "web", label: s.links.website.replace("https://", ""), url: s.links.website });
   if (s.links.github) sources.push({ kind: "github", label: s.links.github.replace("https://github.com/", ""), url: s.links.github });
@@ -429,7 +429,7 @@ function buildToken(s: Seed, i: number): Token {
     },
     feeClaims: claimsList,
     feesUnclaimedSol: Math.round(r() * 30) / 10,
-    ai: { ...s.ai, updatedAt: iso((1 + Math.floor(r() * 5)) * H), sources },
+    ai: { ...(s.ai as NonNullable<Token["ai"]>), updatedAt: iso((1 + Math.floor(r() * 5)) * H), sources },
     repo: s.repo ? { ...s.repo, updatedAt: iso((2 + Math.floor(r() * 10)) * H) } : undefined,
     series: series(i * 7 + 3, s.trend),
   };

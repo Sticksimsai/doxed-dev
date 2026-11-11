@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "@tanstack/react-router";
 import { ArrowLeft, CheckCircle2, Lock, XCircle } from "@/components/icons";
-import { getDev, tokensByDev } from "@/lib/api";
+import { getDevWithTokens } from "@/lib/api";
 import { ago, cn, date, deltaClass, pct, short, usd } from "@/lib/format";
 import type { Dev } from "@/lib/types";
 import { Identicon } from "@/components/icons";
@@ -18,10 +18,11 @@ const CHECKS: [keyof Dev["checks"], string, string][] = [
 
 export function DevPage() {
   const { id } = useParams({ from: "/dev/$id" });
-  const { data: dev, isLoading } = useQuery({ queryKey: ["dev", id], queryFn: () => getDev(id) });
+  const { data, isLoading } = useQuery({ queryKey: ["dev", id], queryFn: () => getDevWithTokens(id) });
+  const dev = data?.dev;
   if (isLoading) return <div className="py-20 text-center text-sm text-subtle">Loading…</div>;
   if (!dev) return <div className="py-20 text-center text-sm text-subtle">Dev not found.</div>;
-  const tokens = tokensByDev(dev.id);
+  const tokens = data!.tokens;
   const d = DISCLOSURE[dev.disclosure];
 
   return (

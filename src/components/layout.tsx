@@ -1,6 +1,30 @@
 import { Link, Outlet } from "@tanstack/react-router";
 import { ArrowUp, BookOpen, ChartNoAxesCombined, Code2, DoxedMark, Rocket, Star } from "@/components/icons";
 import { EventTicker } from "./code-fx";
+import { useMe, useSignIn, useSignOut } from "@/lib/session";
+import { short } from "@/lib/format";
+
+function WalletButton() {
+  const { data: me } = useMe();
+  const signIn = useSignIn();
+  const signOut = useSignOut();
+  if (me?.wallet)
+    return (
+      <button onClick={() => signOut.mutate()} className="btn-ghost !px-3 !py-1.5 text-[13px]" title="Sign out">
+        <span className="h-1.5 w-1.5 bg-success" />
+        {me.dev?.alias ?? short(me.wallet, 4, 4)}
+      </button>
+    );
+  return (
+    <button
+      onClick={() => signIn.mutate(undefined, { onError: (e) => alert((e as Error).message) })}
+      disabled={signIn.isPending}
+      className="btn-ghost !px-3 !py-1.5 text-[13px]"
+    >
+      {signIn.isPending ? "Signing…" : "Connect"}
+    </button>
+  );
+}
 import { useEffect, useState } from "react";
 import { APP_NAME, BRAND_BOLD, BRAND_LIGHT, X_URL } from "@/lib/brand";
 import { XIcon } from "./ui";
@@ -82,9 +106,10 @@ function SiteHeader() {
               <div className="flex items-center gap-0.5 rounded-md border border-border bg-card p-1">
                 <NavLinks />
               </div>
+              <WalletButton />
               <Link
                 to="/launch"
-                className="btn-primary ml-1 !py-1.5 text-[13px]"
+                className="btn-primary !py-1.5 text-[13px]"
               >
                 <Rocket className="h-3.5 w-3.5" /> Launch
               </Link>
@@ -92,6 +117,9 @@ function SiteHeader() {
                 <XIcon className="h-[18px] w-[18px]" />
               </a>
             </nav>
+            <span className="lg:hidden">
+              <WalletButton />
+            </span>
             <a href={X_URL} target="_blank" rel="noreferrer" aria-label="X" className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:bg-raised hover:text-foreground lg:hidden">
               <XIcon className="h-4 w-4" />
             </a>

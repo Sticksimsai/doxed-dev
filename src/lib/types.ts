@@ -118,8 +118,10 @@ export interface Token {
   freezeAuthorityOff: boolean;
   lock: Lock;
   feeClaims: FeeClaim[];
-  feesUnclaimedSol: number;
-  ai: AiSummary;
+  /** null when the launchpad doesn't expose unclaimed fees */
+  feesUnclaimedSol: number | null;
+  /** undefined until the first AI pass has run */
+  ai?: AiSummary;
   repo?: RepoAnalysis;
   series: number[]; // price history for the mini chart
 }

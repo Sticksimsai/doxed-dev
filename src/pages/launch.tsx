@@ -5,6 +5,7 @@ import {
   Check,
   CheckCircle2,
   EyeOff,
+  ExternalLink,
   Fingerprint,
   ImagePlus,
   Loader2,
@@ -13,7 +14,10 @@ import {
   Rocket,
   ShieldCheck,
 } from "@/components/icons";
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { http, USE_MOCK } from "@/lib/api";
+import { startDoxing, useMe, useSignIn } from "@/lib/session";
 import { Cursor, Scramble } from "@/components/code-fx";
 import { LAUNCHPADS } from "@/lib/mock";
 import { APP_NAME, LOCK_MIN_MONTHS } from "@/lib/brand";
@@ -25,6 +29,8 @@ const STEPS = ["Verify yourself", "Pick a launchpad", "Token details", "Lock & t
 
 type Form = {
   kyd: "none" | "checking" | "done";
+  alias: string;
+  mint: string;
   disclosure: Disclosure;
   launchpad?: LaunchpadId;
   name: string;
@@ -41,6 +47,8 @@ type Form = {
 
 const initial: Form = {
   kyd: "none",
+  alias: "",
+  mint: "",
   disclosure: "private",
   name: "",
   symbol: "",
@@ -58,6 +66,11 @@ export function LaunchPage() {
   const [f, setF] = useState<Form>(initial);
   const [launched, setLaunched] = useState<"no" | "sending" | "yes">("no");
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((p) => ({ ...p, [k]: v }));
+  const { data: me } = useMe();
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    if (me?.dev?.status === "approved" && f.kyd !== "done") setF((p) => ({ ...p, kyd: "done", disclosure: me.dev!.disclosure }));
+  }, [me, f.kyd]);
 
   const blockers = useMemo(() => {
     const b: string[][] = [[], [], [], [], []];
@@ -68,10 +81,11 @@ export function LaunchPage() {
     if (!f.x && !f.website) b[2].push("Add at least an X account or website — that's what the AI summary reads.");
     if (!(Number(f.devBuy) >= 0)) b[2].push("Dev buy must be a number.");
     if (!f.agree.lock || !f.agree.accurate || !f.agree.conduct) b[3].push("Accept all three terms to continue.");
+    if (!USE_MOCK && !/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(f.mint)) b[4].push("Paste the mint address of your new token.");
     return b;
   }, [f]);
 
-  if (launched === "yes") return <Success f={f} />;
+  if (launched === "yes") return USE_MOCK ? <Success f={f} /> : <PendingLock f={f} />;
 
   const canNext = blockers[step].length === 0;
   const preview = { symbol: f.symbol.toUpperCase() || "TKN", hue: 148 };
@@ -123,29 +137,52 @@ export function LaunchPage() {
           {step === 1 && <StepLaunchpad f={f} set={set} />}
           {step === 2 && <StepDetails f={f} set={set} />}
           {step === 3 && <StepLock f={f} set={set} />}
-          {step === 4 && <StepReview f={f} goto={setStep} />}
+          {step === 4 && <StepReview f={f} goto={setStep} set={set} />}
 
           <div className="mt-6 flex flex-col-reverse gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
             <button onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0} className="btn-ghost">
               <ArrowLeft className="h-4 w-4" /> Back
             </button>
             <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
-              {!canNext && <span className="text-xs text-warning">{blockers[step][0]}</span>}
+              {error && <span className="text-xs text-danger">{error}</span>}
+              {!error && !canNext && <span className="text-xs text-warning">{blockers[step][0]}</span>}
               {step < 4 ? (
                 <button onClick={() => setStep((s) => s + 1)} disabled={!canNext} className="btn-primary">
                   Continue <ArrowRight className="h-4 w-4" />
                 </button>
               ) : (
                 <button
-                  onClick={() => {
+                  onClick={async () => {
+                    setError(null);
                     setLaunched("sending");
-                    setTimeout(() => setLaunched("yes"), 1400);
+                    if (USE_MOCK) return void setTimeout(() => setLaunched("yes"), 1400);
+                    try {
+                      await http("/launches", {
+                        method: "POST",
+                        json: {
+                          mint: f.mint.trim(),
+                          launchpad: f.launchpad,
+                          name: f.name.trim(),
+                          symbol: f.symbol,
+                          description: f.description || undefined,
+                          x: f.x ? (f.x.startsWith("http") ? f.x : `https://${f.x}`) : undefined,
+                          website: f.website || undefined,
+                          github: f.github || undefined,
+                          devBuySol: Number(f.devBuy) || 0,
+                          lockMonths: f.months,
+                        },
+                      });
+                      setLaunched("yes");
+                    } catch (e) {
+                      setError((e as Error).message);
+                      setLaunched("no");
+                    }
                   }}
-                  disabled={launched === "sending"}
+                  disabled={launched === "sending" || !canNext}
                   className="btn-primary"
                 >
                   {launched === "sending" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-                  {launched === "sending" ? "Launching & locking…" : "Launch token"}
+                  {launched === "sending" ? "Registering…" : USE_MOCK ? "Launch token" : "Register launch"}
                 </button>
               )}
             </div>
@@ -256,26 +293,14 @@ function StepVerify({ f, set }: StepProps) {
             </span>
             <div>
               <div className="font-medium">You're doxed</div>
-              <div className="text-xs text-subtle">Wallet 7xKp…9fQa · valid for future launches</div>
+              <div className="text-xs text-subtle">Valid for all your future launches</div>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-muted-foreground">Takes about 2 minutes on your phone or laptop camera.</div>
-            <button
-              className="btn-primary"
-              disabled={f.kyd === "checking"}
-              onClick={() => {
-                set("kyd", "checking");
-                setTimeout(() => set("kyd", "done"), 1300);
-              }}
-            >
-              {f.kyd === "checking" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-              {f.kyd === "checking" ? "Checking…" : "Start doxing"}
-            </button>
-          </div>
+          <DoxForm f={f} set={set} />
         )}
       </div>
+
 
       <div className="mt-6">
         <div className="mb-2 text-sm font-semibold">What should holders see?</div>
@@ -495,7 +520,7 @@ function StepLock({ f, set }: StepProps) {
   );
 }
 
-function StepReview({ f, goto }: { f: Form; goto: (n: number) => void }) {
+function StepReview({ f, goto, set }: { f: Form; goto: (n: number) => void; set: StepProps["set"] }) {
   const lp = LAUNCHPADS.find((l) => l.id === f.launchpad);
   const rows: [string, ReactNode, number][] = [
     ["Identity", `Verified · shown as ${DISCLOSURE[f.disclosure].short.toLowerCase()}`, 0],
@@ -519,6 +544,21 @@ function StepReview({ f, goto }: { f: Form; goto: (n: number) => void }) {
           </div>
         ))}
       </dl>
+      {!USE_MOCK && (
+        <div className="mt-4 rounded-md border border-dashed border-border-strong p-4">
+          <div className="text-sm font-medium">Create the token on {lp?.name ?? "the launchpad"}</div>
+          <p className="font-prose mt-1 text-xs text-muted-foreground">
+            Using the same wallet you're signed in with, create the token and make your dev buy on {lp?.name ?? "the launchpad"}, then
+            paste its mint address here.
+          </p>
+          <input
+            className="input mt-3 font-mono"
+            placeholder="Token mint address"
+            value={f.mint}
+            onChange={(e) => set("mint", e.target.value.trim())}
+          />
+        </div>
+      )}
       <p className="mt-4 text-xs text-subtle">
         Launchpad fees are paid to {lp?.name ?? "the launchpad"} as normal. After launch, your token page goes live with the AI
         summary within a few minutes.
@@ -545,6 +585,113 @@ function Success({ f }: { f: Form }) {
         <a href="https://x.com/intent/post" target="_blank" rel="noreferrer" className="btn-ghost">
           <XIcon className="h-4 w-4" /> Share
         </a>
+      </div>
+    </div>
+  );
+}
+
+function DoxForm({ f, set }: StepProps) {
+  const { data: me } = useMe();
+  const signIn = useSignIn();
+  const qc = useQueryClient();
+  const [err, setErr] = useState<string | null>(null);
+  if (!me?.wallet)
+    return (
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="text-sm text-muted-foreground">Connect the wallet you'll launch from. Signing in is free.</div>
+        <button className="btn-primary" disabled={signIn.isPending} onClick={() => signIn.mutate(undefined, { onError: (e) => setErr((e as Error).message) })}>
+          {signIn.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+          {signIn.isPending ? "Waiting for wallet…" : "Connect wallet"}
+        </button>
+        {err && <div className="text-xs text-danger sm:basis-full">{err}</div>}
+      </div>
+    );
+  return (
+    <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+      <label className="block">
+        <span className="mb-1.5 block text-sm">Public alias</span>
+        <input className="input" placeholder="e.g. orbitlabs" value={f.alias} maxLength={24} onChange={(e) => set("alias", e.target.value.replace(/[^\w.-]/g, ""))} />
+      </label>
+      <button
+        className="btn-primary h-10"
+        disabled={f.kyd === "checking" || f.alias.length < 3}
+        onClick={async () => {
+          setErr(null);
+          set("kyd", "checking");
+          try {
+            const r = await startDoxing(f.alias, f.disclosure);
+            if (r.status === "pending" && "redirectUrl" in r && r.redirectUrl) window.location.href = r.redirectUrl;
+            else {
+              set("kyd", "done");
+              qc.invalidateQueries({ queryKey: ["me"] });
+            }
+          } catch (e) {
+            setErr((e as Error).message);
+            set("kyd", "none");
+          }
+        }}
+      >
+        {f.kyd === "checking" ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+        {f.kyd === "checking" ? "Checking…" : "Start doxing"}
+      </button>
+      <div className="text-xs text-subtle sm:col-span-2">
+        Signed in as <span className="font-mono text-muted-foreground">{me.wallet.slice(0, 4)}…{me.wallet.slice(-4)}</span>. Pick how much to
+        reveal below first — you can reveal more later, never less.
+      </div>
+      {err && <div className="text-xs text-danger sm:col-span-2">{err}</div>}
+    </div>
+  );
+}
+
+function PendingLock({ f }: { f: Form }) {
+  const [state, setState] = useState<"idle" | "checking" | "ok">("idle");
+  const [msg, setMsg] = useState<string | null>(null);
+  return (
+    <div className="mx-auto max-w-xl py-10">
+      <div className="card p-6">
+        <div className="eyebrow">Step 2 of 2 · lock</div>
+        <h1 className="mt-2 font-display text-3xl font-semibold">${f.symbol} is registered</h1>
+        <p className="font-prose mt-2 text-sm text-muted-foreground">
+          It stays hidden from Discover until 100% of the tokens in your dev wallet are locked on Streamflow for at least{" "}
+          {f.months} months, sent from the same wallet.
+        </p>
+        <ol className="mt-4 space-y-2 font-mono text-[13px] text-muted-foreground">
+          <li>1. Open Streamflow → Token Lock, choose ${f.symbol}</li>
+          <li>2. Lock your full balance, unlock date ≥ {new Date(Date.now() + f.months * 30.44 * 864e5).toLocaleDateString("en-GB", { month: "short", year: "numeric" })}</li>
+          <li>3. Come back and press verify</li>
+        </ol>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <a href="https://app.streamflow.finance/token-lock" target="_blank" rel="noreferrer" className="btn-ghost">
+            Open Streamflow <ExternalLink className="h-3 w-3" />
+          </a>
+          {state === "ok" ? (
+            <Link to="/token/$mint" params={{ mint: f.mint }} className="btn-primary">
+              View token page <ArrowRight className="h-3 w-3" />
+            </Link>
+          ) : (
+            <button
+              className="btn-primary"
+              disabled={state === "checking"}
+              onClick={async () => {
+                setState("checking");
+                setMsg(null);
+                try {
+                  await http(`/launches/${f.mint}/verify-lock`, { method: "POST" });
+                  setState("ok");
+                  setMsg("Lock confirmed on-chain. Your token is live on Discover.");
+                } catch (e) {
+                  setState("idle");
+                  setMsg((e as Error).message);
+                }
+              }}
+            >
+              {state === "checking" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+              {state === "checking" ? "Checking chain…" : "Verify lock"}
+            </button>
+          )}
+        </div>
+        {msg && <p className={cn("mt-3 text-sm", state === "ok" ? "text-success" : "text-danger")}>{msg}</p>}
+        <p className="mt-4 text-xs text-subtle">We also re-check automatically every few minutes for the next 7 days.</p>
       </div>
     </div>
   );
