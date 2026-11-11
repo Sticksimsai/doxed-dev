@@ -47,6 +47,8 @@ services:
       # ---- settings with sensible defaults
       - key: ID_HASH_SECRET # keys the duplicate-ID guard; never change once live
         generateValue: true
+      - key: PUBLIC_URL # custom domain; the onrender.com address redirects here
+        value: https://doxxed.app
       - key: LAUNCH_FEE_SOL
         value: "0"
       - key: BUILDER_MONTHLY_CREDIT_USD
