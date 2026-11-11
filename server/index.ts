@@ -403,6 +403,13 @@ if (existsSync(dist)) {
 // ------------------------------------------------------------------ boot
 await migrate();
 await bootstrapIntegrations();
+{
+  // Names only, never values — so missing keys are visible in the host's logs.
+  const names = ["ADMIN_WALLETS","OPENROUTER_API_KEY","HELIUS_API_KEY","DIDIT_API_KEY","DIDIT_WEBHOOK_SECRET","DIDIT_WORKFLOW_ID","PINATA_JWT","TREASURY_WALLET","LAUNCH_FEE_SOL","ANTHROPIC_API_KEY","GITHUB_TOKEN","X_BEARER_TOKEN","ID_HASH_SECRET","AI_MODEL","KYD_FRAME_ORIGIN","BUILDER_MONTHLY_CREDIT_USD","BUILDER_RPM","BUILDER_MAX_KEYS","BUILDER_MAX_TOKENS","BUILDER_MODELS","PRIORITY_FEE_SOL","ALLOW_MOCK_KYD","SEED_DEMO","RUN_JOBS"];
+  const has = (n: string) => n in process.env;
+  console.log(`[env] present: ${names.filter(has).join(",") || "-"}`);
+  console.log(`[env] absent: ${names.filter((n) => !has(n)).join(",") || "-"}`);
+}
 if (env.seedDemo) await seedDemo();
 startJobs();
 serve({ fetch: app.fetch, port: env.port }, (i) => console.log(`[doxed] listening on :${i.port}`));
