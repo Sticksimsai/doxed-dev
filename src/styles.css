@@ -63,6 +63,8 @@
 @layer base {
   * { border-color: var(--color-border); }
   html, body {
+    overflow-x: clip;
+    max-width: 100%;
     background: var(--color-background);
     color: var(--color-foreground);
     color-scheme: dark;
@@ -94,7 +96,7 @@
 @utility btn { @apply inline-flex shrink-0 whitespace-nowrap items-center justify-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40; }
 @utility btn-primary { @apply btn bg-foreground text-background hover:bg-white; }
 @utility btn-ghost { @apply btn border border-border-strong bg-card text-foreground hover:bg-raised; }
-@utility chip { @apply inline-flex items-center gap-1 rounded-[4px] border px-1.5 py-0.5 text-[11px]; }
+@utility chip { @apply inline-flex shrink-0 whitespace-nowrap items-center gap-1 rounded-[4px] border px-1.5 py-0.5 text-[11px]; }
 @utility input { @apply h-10 w-full rounded-md border border-border-strong bg-card px-3 text-sm outline-none placeholder:text-subtle focus:border-foreground/60; }
 @utility redacted {
   display: inline-block;
@@ -142,3 +144,7 @@
 @media (prefers-reduced-motion: reduce) {
   .blink, .ticker, .fade-up, .scanline::after, .backdrop::before, .backdrop::after, .animate-ping, .animate-spin { animation: none !important; }
 }
+
+/* Tooltips: removed from layout until hovered/focused so they never cause sideways scroll. */
+.tip { display: none; }
+.group:hover > .tip, .group:focus-within > .tip { display: block; }

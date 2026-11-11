@@ -119,7 +119,7 @@ function DockButton({ label, icon: Icon, to, soon }: { label: string; icon: type
           <Icon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
         </button>
       )}
-      <span className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-card px-2 py-1 text-[10px] font-medium opacity-0 shadow-md transition-opacity group-hover:opacity-100">
+      <span className="pointer-events-none absolute right-0 bottom-full mb-1.5 whitespace-nowrap rounded-md border border-border bg-card px-2 py-1 text-[10px] font-medium tip shadow-md">
         {label}
         {soon ? " · coming soon" : ""}
       </span>

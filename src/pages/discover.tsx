@@ -131,13 +131,13 @@ export function DiscoverPage() {
       </section>
 
       {/* Filter bar */}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div className="mb-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
         <input
           type="text"
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="> search name, symbol or CA"
-          className="h-9 w-full max-w-xs rounded-md border border-border bg-card px-3 text-[13px] outline-none placeholder:text-subtle focus:border-foreground/50"
+          className="col-span-2 h-9 w-full rounded-md border border-border bg-card px-3 text-[13px] sm:w-64 lg:w-72 outline-none placeholder:text-subtle focus:border-foreground/50"
         />
         <FilterSelect
           label="Launchpad"
@@ -177,7 +177,7 @@ export function DiscoverPage() {
             { label: "$1M+", value: 1_000_000 },
           ]}
         />
-        <div className="ml-auto flex items-center gap-2">
+        <div className="col-span-2 flex items-center justify-between gap-2 sm:ml-auto sm:justify-end">
           <div className="inline-flex rounded-md border border-border bg-card p-0.5 text-xs">
             {(["5m", "1h", "6h", "24h"] as TF[]).map((t) => (
               <button
@@ -199,28 +199,28 @@ export function DiscoverPage() {
           <table className="w-full text-sm">
             <thead className="bg-white/[0.03] font-pixel text-[10px] uppercase text-subtle">
               <tr>
-                <Th className="w-12 text-left">#</Th>
-                <Th className="text-left">Token</Th>
+                <Th className="hidden w-10 text-left sm:table-cell">#</Th>
+                <Th className="w-full text-left sm:w-auto">Token</Th>
                 <Th onClick={() => toggle("mcap")}>Market cap {icon("mcap")}</Th>
-                <Th onClick={() => toggle("change")}>
+                <Th onClick={() => toggle("change")} className="hidden sm:table-cell">
                   {tf} % {icon("change")}
                 </Th>
-                <Th onClick={() => toggle("volume24h")} className="hidden lg:table-cell">
+                <Th onClick={() => toggle("volume24h")} className="hidden xl:table-cell">
                   Vol 24h {icon("volume24h")}
                 </Th>
-                <Th onClick={() => toggle("liquidity")} className="hidden lg:table-cell">
+                <Th onClick={() => toggle("liquidity")} className="hidden 2xl:table-cell">
                   Liquidity {icon("liquidity")}
                 </Th>
-                <Th onClick={() => toggle("holders")} className="hidden md:table-cell">
+                <Th onClick={() => toggle("holders")} className="hidden lg:table-cell">
                   Holders {icon("holders")}
                 </Th>
-                <Th onClick={() => toggle("locked")} className="hidden sm:table-cell">
+                <Th onClick={() => toggle("locked")} className="hidden md:table-cell">
                   Locked {icon("locked")}
                 </Th>
-                <Th onClick={() => toggle("age")} className="hidden md:table-cell">
+                <Th onClick={() => toggle("age")} className="hidden lg:table-cell">
                   Age {icon("age")}
                 </Th>
-                <Th>Trade</Th>
+                <Th className="hidden xl:table-cell">Trade</Th>
               </tr>
             </thead>
             <tbody>
@@ -282,13 +282,13 @@ function Row({ t, i, tf }: { t: Token; i: number; tf: TF }) {
   const monthsLeft = Math.max(0, Math.round((Date.parse(t.lock.unlocksAt) - Date.now()) / (30 * 864e5)));
   return (
     <tr onClick={() => nav({ to: "/token/$mint", params: { mint: t.mint } })} className="group cursor-pointer border-t border-border transition hover:bg-raised/40">
-      <td className="px-3 py-3 text-muted-foreground tabular">{i + 1}</td>
-      <td className="px-3 py-3">
+      <td className="hidden px-3 py-3 text-muted-foreground tabular sm:table-cell">{i + 1}</td>
+      <td className="max-w-0 px-3 py-3 sm:max-w-none">
         <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-3">
-            <TokenIcon t={t} size={40} />
+          <div className="flex min-w-0 items-center gap-3">
+            <TokenIcon t={t} size={36} />
             <div className="min-w-0">
-              <div className="flex items-center gap-1.5 font-medium">
+              <div className="flex items-center gap-1.5 whitespace-nowrap font-medium">
                 <span className="truncate">{t.symbol}</span>
                 <KydMark dev={dev} />
               </div>
@@ -298,23 +298,26 @@ function Row({ t, i, tf }: { t: Token; i: number; tf: TF }) {
               </div>
             </div>
           </div>
-          <div onClick={(e) => e.stopPropagation()} className="pl-[3.25rem]">
+          <div onClick={(e) => e.stopPropagation()} className="hidden pl-[3.25rem] sm:block">
             <TokenQuickLinks t={t} />
           </div>
         </div>
       </td>
-      <td className="px-3 py-3 text-right font-medium tabular">{usd(t.mcap)}</td>
-      <td className={cn("px-3 py-3 text-right font-medium tabular", deltaClass(ch))}>{pct(ch)}</td>
-      <td className="hidden px-3 py-3 text-right tabular lg:table-cell">{usd(t.volume24h)}</td>
-      <td className="hidden px-3 py-3 text-right tabular lg:table-cell">{usd(t.liquidity)}</td>
-      <td className="hidden px-3 py-3 text-right tabular md:table-cell">{int(t.holders)}</td>
-      <td className="hidden px-3 py-3 text-right sm:table-cell">
-        <span className="inline-flex items-center gap-1 rounded-[4px] border border-border-strong px-1.5 py-0.5 text-[11px] text-foreground" title={`100% of dev tokens locked · ${monthsLeft} months left`}>
+      <td className="px-3 py-3 text-right font-medium whitespace-nowrap tabular">
+        {usd(t.mcap)}
+        <div className={cn("text-xs sm:hidden", deltaClass(ch))}>{pct(ch)}</div>
+      </td>
+      <td className={cn("hidden px-3 py-3 text-right font-medium whitespace-nowrap tabular sm:table-cell", deltaClass(ch))}>{pct(ch)}</td>
+      <td className="hidden px-3 py-3 text-right tabular xl:table-cell">{usd(t.volume24h)}</td>
+      <td className="hidden px-3 py-3 text-right tabular 2xl:table-cell">{usd(t.liquidity)}</td>
+      <td className="hidden px-3 py-3 text-right tabular lg:table-cell">{int(t.holders)}</td>
+      <td className="hidden px-3 py-3 text-right md:table-cell">
+        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-[4px] border border-border-strong px-1.5 py-0.5 text-[11px] text-foreground" title={`100% of dev tokens locked · ${monthsLeft} months left`}>
           <Lock className="h-3 w-3" /> 100% · {monthsLeft}mo
         </span>
       </td>
-      <td className="hidden px-3 py-3 text-right text-muted-foreground tabular md:table-cell">{ago(t.createdAt)}</td>
-      <td className="px-3 py-3 text-right">
+      <td className="hidden px-3 py-3 text-right text-muted-foreground tabular lg:table-cell">{ago(t.createdAt)}</td>
+      <td className="hidden px-3 py-3 text-right xl:table-cell">
         <a
           href="#"
           onClick={(e) => e.stopPropagation()}

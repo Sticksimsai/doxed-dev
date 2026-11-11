@@ -74,7 +74,7 @@ export function KydBadge({ dev, size = "sm" }: { dev: Dev; size?: "sm" | "md" })
       </span>
       <span
         role="tooltip"
-        className="pointer-events-none absolute top-full left-0 z-40 mt-2 w-64 rounded-md border border-border-strong bg-[#0b0b0b]/95 p-3 text-xs leading-relaxed text-muted-foreground opacity-0 shadow-xl transition group-focus-within:opacity-100 group-hover:opacity-100"
+        className="pointer-events-none absolute top-full right-0 z-40 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-md border border-border-strong bg-[#0b0b0b]/95 p-3 text-xs leading-relaxed text-muted-foreground tip shadow-xl"
       >
         <span className="mb-1 block font-semibold text-foreground">{d.label}</span>
         {d.desc}
@@ -98,7 +98,7 @@ export function CopyButton({ value, label, className }: { value: string; label?:
         setTimeout(() => setOk(false), 1200);
       }}
       className={cn(
-        "inline-flex items-center gap-1 rounded-md border border-border bg-background/40 px-2 py-0.5 font-mono text-xs text-muted-foreground transition hover:bg-accent hover:text-foreground",
+        "inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-border bg-background/40 px-2 py-0.5 font-mono text-xs text-muted-foreground transition hover:bg-accent hover:text-foreground",
         className,
       )}
       title="Copy"
@@ -285,7 +285,7 @@ export function FilterSelect<T extends string | number>({
   options: { label: string; value: T }[];
 }) {
   return (
-    <label className="relative inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-card pr-8 pl-3 text-[13px] transition hover:border-border-strong focus-within:border-foreground/50">
+    <label className="relative inline-flex h-9 min-w-0 items-center gap-1.5 rounded-md border border-border bg-card pr-8 pl-3 text-[13px] transition hover:border-border-strong focus-within:border-foreground/50">
       <span className="text-subtle">{label}</span>
       <select
         value={String(value)}
@@ -293,7 +293,7 @@ export function FilterSelect<T extends string | number>({
           const o = options.find((x) => String(x.value) === e.target.value);
           if (o) onChange(o.value);
         }}
-        className="appearance-none bg-transparent font-medium text-foreground outline-none [&>option]:bg-card"
+        className="min-w-0 flex-1 truncate appearance-none bg-transparent font-medium text-foreground outline-none"
       >
         {options.map((o) => (
           <option key={String(o.value)} value={String(o.value)}>
@@ -310,7 +310,7 @@ export function FilterSelect<T extends string | number>({
 export function TokenQuickLinks({ t }: { t: Pick<Token, "mint" | "links"> }) {
   const box = "grid h-7 w-7 place-items-center rounded-md border border-border bg-card text-muted-foreground hover:bg-accent hover:text-foreground";
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex flex-nowrap items-center gap-1">
       <CopyButton value={t.mint} className="rounded-md border-border bg-card px-2 py-1 font-medium" />
       {t.links.website && (
         <a href={t.links.website} target="_blank" rel="noreferrer" title="Website" className={box}>
@@ -345,7 +345,7 @@ export function KydMark({ dev, size = 16 }: { dev: Dev; size?: number }) {
       </span>
       <span
         role="tooltip"
-        className="pointer-events-none absolute top-full left-1/2 z-40 font-prose mt-2 w-60 -translate-x-1/2 rounded-md border border-border-strong bg-[#0b0b0b]/95 p-3 text-left text-xs font-normal leading-relaxed text-muted-foreground opacity-0 shadow-xl transition group-focus-within:opacity-100 group-hover:opacity-100"
+        className="pointer-events-none absolute top-full left-0 z-40 font-prose mt-2 w-60 max-w-[calc(100vw-2rem)] rounded-md border border-border-strong bg-[#0b0b0b]/95 p-3 text-left text-xs font-normal leading-relaxed text-muted-foreground tip shadow-xl"
       >
         <span className="mb-1 block font-semibold text-foreground">{DISCLOSURE[dev.disclosure].label}</span>
         {DISCLOSURE[dev.disclosure].desc}
