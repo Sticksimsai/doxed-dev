@@ -11,8 +11,8 @@ const PILLARS = [
   },
   {
     icon: ShieldCheck,
-    title: "Doxed, privately",
-    body: "Every dev proves who they are to us before launching. Holders see the Doxed badge; the personal details stay private.",
+    title: "Doxxed, privately",
+    body: "Every dev proves who they are to us before launching. Holders see the Doxxed badge; the personal details stay private.",
   },
   {
     icon: Lock,
@@ -32,7 +32,7 @@ const PILLARS = [
   {
     icon: Code2,
     title: "Builder API",
-    body: "Doxed devs get their own API keys to hundreds of AI models through one OpenAI-compatible endpoint, with up to $100 of free compute a month.",
+    body: "Doxxed devs get their own API keys to hundreds of AI models through one OpenAI-compatible endpoint, with up to $100 of free compute a month.",
   },
   {
     icon: EyeOff,

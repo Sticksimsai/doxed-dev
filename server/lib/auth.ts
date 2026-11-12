@@ -13,7 +13,7 @@ const secret = new TextEncoder().encode(env.sessionSecret);
 const COOKIE = "doxed_session";
 
 export const signInMessage = (wallet: string, nonce: string, host: string) =>
-  `${host} wants you to sign in with your Solana account:\n${wallet}\n\nSign in to Doxed Dev. This does not cost anything or move funds.\n\nNonce: ${nonce}`;
+  `${host} wants you to sign in with your Solana account:\n${wallet}\n\nSign in to Doxxed Dev. This does not cost anything or move funds.\n\nNonce: ${nonce}`;
 
 export async function createNonce(wallet: string) {
   const nonce = randomBytes(16).toString("hex");

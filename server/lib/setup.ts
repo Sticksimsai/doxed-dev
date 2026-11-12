@@ -95,7 +95,7 @@ export async function setupChecks(): Promise<{ publicUrl: string; webhookUrl: st
   add(
     (async (): Promise<Check> => {
       const keys = [k("OPENROUTER_API_KEY", !!env.openrouterKey)];
-      if (!env.openrouterKey) return { id: "builder", name: "Builder API", purpose: "dxd_ keys + $" + env.builderCreditUsd + "/mo compute for doxed devs", keys, status: "missing", detail: "Builder API shows as 'not switched on yet'" };
+      if (!env.openrouterKey) return { id: "builder", name: "Builder API", purpose: "dxd_ keys + $" + env.builderCreditUsd + "/mo compute for doxxed devs", keys, status: "missing", detail: "Builder API shows as 'not switched on yet'" };
       const [s, d] = await probe(async () => {
         const r = await fetch(`${OR_BASE}/key`, { headers: { authorization: `Bearer ${env.openrouterKey}` }, ...timeout() });
         if (!r.ok) throw new Error(r.status === 401 ? "Key rejected" : `HTTP ${r.status}`);
@@ -103,7 +103,7 @@ export async function setupChecks(): Promise<{ publicUrl: string; webhookUrl: st
         const cap = data.limit == null ? "no spending cap set — add one" : `$${(data.limit_remaining ?? 0).toFixed(2)} of $${data.limit} cap left`;
         return `Connected · $${(data.usage ?? 0).toFixed(2)} spent · ${cap}`;
       });
-      return { id: "builder", name: "Builder API", purpose: `dxd_ keys + $${env.builderCreditUsd}/mo compute for doxed devs`, keys, status: s, detail: d };
+      return { id: "builder", name: "Builder API", purpose: `dxd_ keys + $${env.builderCreditUsd}/mo compute for doxxed devs`, keys, status: s, detail: d };
     })(),
   );
 

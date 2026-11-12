@@ -1,7 +1,7 @@
-# Doxed Dev
+# Doxxed Dev
 
 A trust layer on top of Solana launchpads (Pump.fun, Raydium LaunchLab, LetsBonk, Meteora DBC).
-Devs get **doxed privately** before launching, and **100% of their tokens are locked for 12+ months** on Streamflow.
+Devs get **doxxed privately** before launching, and **100% of their tokens are locked for 12+ months** on Streamflow.
 Discover shows every token with an AI summary (X + website), an AI GitHub review, creator-fee claim history and the lock.
 
 ## Stack
@@ -21,7 +21,7 @@ npm run dev                      # UI on :5173, proxies /api to :8787
 
 ## How a launch works (all in-app)
 1. **Sign in** — the wallet signs a one-time message; httpOnly session cookie.
-2. **Get doxed** — `POST /api/kyd/start` opens a Didit session, shown in an iframe: **scan ID → face scan**.
+2. **Get doxxed** — `POST /api/kyd/start` opens a Didit session, shown in an iframe: **scan ID → face scan**.
    Didit runs document-fraud checks, passive liveness (photos, screens, masks, deepfakes) and face match.
    Its signed webhook (`/api/kyd/didit/webhook`, X-Signature-V2) triggers our decision engine (`server/lib/risk.ts`):
    hard rules (genuine doc, liveness ≥ 70, face match ≥ 70, 18+, not expired) → duplicate-ID guard (one-way HMAC of
@@ -48,7 +48,7 @@ npm run dev                      # UI on :5173, proxies /api to :8787
 | `KYD_FRAME_ORIGIN` | Origin of the embedded ID-scan page, if you move it to your own subdomain (default: the provider's) |
 
 ## Builder API (per-dev AI keys)
-Doxed devs create up to 5 `dxd_…` keys at `/builder`. The server proxies them to one master OpenRouter key.
+Doxxed devs create up to 5 `dxd_…` keys at `/builder`. The server proxies them to one master OpenRouter key.
 - **Endpoint:** OpenAI-compatible at `https://<host>/api/v1` — `POST /chat/completions` (streaming supported), `GET /models`, `GET /key` (remaining credit).
 - **Security:** keys stored as SHA-256 hashes only, shown once; revoked instantly; stop working if the dev is flagged or not approved.
 - **Metering:** every request's real cost comes from OpenRouter's `usage.cost` (or the generation lookup if a stream is cut off) and is logged in `builder_usage`.
@@ -79,7 +79,7 @@ dashboard to switch on fee tracking and AI.
 - Image upload storage
 
 ## White-labelling
-Users only ever see Doxed Dev. Provider names are kept out of the UI, API responses and error messages:
+Users only ever see Doxxed Dev. Provider names are kept out of the UI, API responses and error messages:
 the Builder API rewrites response ids (`dxd-…`), strips upstream-only fields, neutralises stream keep-alives and scrubs
 upstream names from errors; `/v1/models` is re-shaped to a neutral schema. The only third-party surface left is the
 embedded ID-scan page — turn on white-label branding and a custom domain in the verification provider's console,

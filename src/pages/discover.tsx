@@ -84,7 +84,7 @@ export function DiscoverPage() {
               Live on Solana
             </div>
             <h1 className="mt-5 font-display text-4xl leading-[1.05] font-semibold md:text-6xl">
-              <Scramble text="Every dev doxed." />
+              <Scramble text="Every dev doxxed." />
               <span className="block text-muted-foreground">
                 <Scramble text="Every bag locked." delay={350} />
                 <Cursor className="text-foreground" />
@@ -107,7 +107,7 @@ export function DiscoverPage() {
           <TerminalDemo className="fade-up [animation-delay:150ms]" />
         </div>
         <div className="relative mt-8 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <StatCard icon={Activity} label="Doxed tokens" value={`${rows.length}/${tokens.length}`} />
+          <StatCard icon={Activity} label="Doxxed tokens" value={`${rows.length}/${tokens.length}`} />
           <StatCard icon={Coins} label="Total mcap" value={usd(totals.mcap)} accent />
           <StatCard icon={BarChart3} label="24h volume" value={usd(totals.vol)} />
           <StatCard icon={Lock} label="Dev bags locked" value={usd(totals.locked)} />
@@ -150,7 +150,7 @@ export function DiscoverPage() {
           value={dev}
           onChange={setDev}
           options={[
-            { label: "Any doxed", value: 0 },
+            { label: "Any doxxed", value: 0 },
             { label: "Socials linked", value: 1 },
             { label: "Fully public", value: 2 },
           ]}

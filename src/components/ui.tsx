@@ -38,21 +38,21 @@ export function LaunchpadChip({ id, className }: { id: LaunchpadId; className?: 
 
 export const DISCLOSURE: Record<Disclosure, { label: string; short: string; desc: string; icon: typeof Eye }> = {
   private: {
-    label: "Doxed · Private",
+    label: "Doxxed · Private",
     short: "Private",
-    desc: "Doxed to us, not to you. Identity checked and kept confidential — nothing personal is shown publicly.",
+    desc: "Doxxed to us, not to you. Identity checked and kept confidential — nothing personal is shown publicly.",
     icon: EyeOff,
   },
   pseudonymous: {
-    label: "Doxed · Socials",
+    label: "Doxxed · Socials",
     short: "Socials",
     desc: "Identity checked by us. The dev also publicly linked the X / GitHub accounts they proved they own.",
     icon: UserRound,
   },
   public: {
-    label: "Doxed · Public",
+    label: "Doxxed · Public",
     short: "Public",
-    desc: "Fully doxed. Identity checked by us and the dev chose to show their real name publicly.",
+    desc: "Fully doxxed. Identity checked by us and the dev chose to show their real name publicly.",
     icon: Eye,
   },
 };
@@ -70,7 +70,7 @@ export function KydBadge({ dev, size = "sm" }: { dev: Dev; size?: "sm" | "md" })
         )}
       >
         <ShieldCheck className={size === "md" ? "h-3.5 w-3.5" : "h-3 w-3"} />
-        {size === "md" ? d.label : `DOXED · ${d.short}`}
+        {size === "md" ? d.label : `DOXXED · ${d.short}`}
       </span>
       <span
         role="tooltip"

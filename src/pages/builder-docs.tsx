@@ -59,7 +59,7 @@ const ENDPOINTS: Endpoint[] = [
     ),
     examples: {
       Request: `curl ${BASE}/chat/completions \\
-  -H "Authorization: Bearer $DOXED_API_KEY" \\
+  -H "Authorization: Bearer $DOXXED_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
     "model": "${M}",
@@ -147,7 +147,7 @@ data: [DONE]`,
     paramsTitle: "Returns",
     examples: {
       Request: `curl ${BASE}/key \\
-  -H "Authorization: Bearer $DOXED_API_KEY"`,
+  -H "Authorization: Bearer $DOXXED_API_KEY"`,
       Response: `{
   "data": {
     "credit_usd": 100,
@@ -166,7 +166,7 @@ data: [DONE]`,
     group: "data",
     auth: "public",
     title: "List tokens",
-    summary: "Every listed doxed token with its dev — market data, lock, fee claims, AI summary and code review.",
+    summary: "Every listed doxxed token with its dev — market data, lock, fee claims, AI summary and code review.",
     params: [
       { name: "tokens[]", type: "Token[]", desc: "Sorted by market cap" },
       { name: "devs[]", type: "Dev[]", desc: "Public profiles of the devs behind them" },
@@ -276,11 +276,11 @@ const INTEGRATIONS: { name: string; kind: string; code: string }[] = [
     kind: "SDK · JS & Python",
     code: `// npm i openai
 import OpenAI from "openai";
-const ai = new OpenAI({ apiKey: process.env.DOXED_API_KEY, baseURL: "${BASE}" });
+const ai = new OpenAI({ apiKey: process.env.DOXXED_API_KEY, baseURL: "${BASE}" });
 
 # pip install openai
 from openai import OpenAI
-ai = OpenAI(api_key=os.environ["DOXED_API_KEY"], base_url="${BASE}")`,
+ai = OpenAI(api_key=os.environ["DOXXED_API_KEY"], base_url="${BASE}")`,
   },
   {
     name: "Vercel AI SDK",
@@ -289,10 +289,10 @@ ai = OpenAI(api_key=os.environ["DOXED_API_KEY"], base_url="${BASE}")`,
 import { createOpenAI } from "@ai-sdk/openai";
 import { generateText } from "ai";
 
-const doxed = createOpenAI({ baseURL: "${BASE}", apiKey: process.env.DOXED_API_KEY });
+const doxxed = createOpenAI({ baseURL: "${BASE}", apiKey: process.env.DOXXED_API_KEY });
 
 const { text } = await generateText({
-  model: doxed.chat("${M}"),   // use .chat() — this is a Chat Completions endpoint
+  model: doxxed.chat("${M}"),   // use .chat() — this is a Chat Completions endpoint
   prompt: "Summarise today's holder questions",
 });`,
   },
@@ -303,13 +303,13 @@ const { text } = await generateText({
 import { ChatOpenAI } from "@langchain/openai";
 const llm = new ChatOpenAI({
   model: "${M}",
-  apiKey: process.env.DOXED_API_KEY,
+  apiKey: process.env.DOXXED_API_KEY,
   configuration: { baseURL: "${BASE}" },
 });
 
 # pip install langchain-openai
 from langchain_openai import ChatOpenAI
-llm = ChatOpenAI(model="${M}", api_key=os.environ["DOXED_API_KEY"], base_url="${BASE}")`,
+llm = ChatOpenAI(model="${M}", api_key=os.environ["DOXXED_API_KEY"], base_url="${BASE}")`,
   },
   {
     name: "LlamaIndex",
@@ -320,7 +320,7 @@ from llama_index.llms.openai_like import OpenAILike
 llm = OpenAILike(
     model="${M}",
     api_base="${BASE}",
-    api_key=os.environ["DOXED_API_KEY"],
+    api_key=os.environ["DOXXED_API_KEY"],
     is_chat_model=True,
 )`,
   },
@@ -332,7 +332,7 @@ import { Bot } from "grammy";
 import OpenAI from "openai";
 
 const MINT = "<your token mint>";
-const ai = new OpenAI({ apiKey: process.env.DOXED_API_KEY, baseURL: "${BASE}" });
+const ai = new OpenAI({ apiKey: process.env.DOXXED_API_KEY, baseURL: "${BASE}" });
 const bot = new Bot(process.env.TELEGRAM_TOKEN!);
 
 bot.on("message:text", async (ctx) => {
@@ -355,7 +355,7 @@ bot.start();`,
 import { Client, GatewayIntentBits } from "discord.js";
 import OpenAI from "openai";
 
-const ai = new OpenAI({ apiKey: process.env.DOXED_API_KEY, baseURL: "${BASE}" });
+const ai = new OpenAI({ apiKey: process.env.DOXXED_API_KEY, baseURL: "${BASE}" });
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
@@ -407,7 +407,7 @@ const FEATURES: Record<string, string> = {
     type: "function",
     function: {
       name: "get_token",
-      description: "Look up a Doxed token",
+      description: "Look up a Doxxed token",
       parameters: {
         type: "object",
         properties: { symbol: { type: "string" } },
@@ -497,7 +497,7 @@ export function BuilderDocsPage() {
           <Cursor />
         </h1>
         <p className="font-prose mt-3 max-w-2xl text-muted-foreground">
-          One OpenAI-compatible endpoint for hundreds of AI models, plus a public data API for every doxed token. Free for doxed devs —
+          One OpenAI-compatible endpoint for hundreds of AI models, plus a public data API for every doxxed token. Free for doxxed devs —
           up to <b className="text-foreground">$100 of compute every month</b>.
         </p>
       </header>
@@ -533,7 +533,7 @@ export function BuilderDocsPage() {
             </div>
             <div className="grid gap-3 md:grid-cols-3">
               {[
-                ["1", "Get doxed", "Scan your ID once — keys are for verified devs."],
+                ["1", "Get doxxed", "Scan your ID once — keys are for verified devs."],
                 ["2", "Create a key", "On the Builder dashboard. Shown once — store it in an env var."],
                 ["3", "Point your SDK here", "Swap the base URL + key in any OpenAI-compatible client."],
               ].map(([n, t, d]) => (
@@ -551,7 +551,7 @@ export function BuilderDocsPage() {
                 JavaScript: `import OpenAI from "openai";
 
 const ai = new OpenAI({
-  apiKey: process.env.DOXED_API_KEY,   // dxd_…
+  apiKey: process.env.DOXXED_API_KEY,   // dxd_…
   baseURL: "${BASE}",
 });
 
@@ -563,7 +563,7 @@ console.log(res.choices[0].message.content);`,
                 Python: `import os
 from openai import OpenAI
 
-ai = OpenAI(api_key=os.environ["DOXED_API_KEY"], base_url="${BASE}")
+ai = OpenAI(api_key=os.environ["DOXXED_API_KEY"], base_url="${BASE}")
 
 res = ai.chat.completions.create(
     model="${M}",
@@ -571,7 +571,7 @@ res = ai.chat.completions.create(
 )
 print(res.choices[0].message.content)`,
                 cURL: `curl ${BASE}/chat/completions \\
-  -H "Authorization: Bearer $DOXED_API_KEY" \\
+  -H "Authorization: Bearer $DOXXED_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"model":"${M}","messages":[{"role":"user","content":"gm"}]}'`,
               }}
@@ -588,7 +588,7 @@ print(res.choices[0].message.content)`,
             {(["gateway", "data"] as const).map((g) => (
               <div key={g}>
                 <div className="mb-2 flex items-baseline justify-between gap-3">
-                  <div className="shrink-0 font-display text-lg font-medium">{g === "gateway" ? "AI gateway" : "Doxed Data API"}</div>
+                  <div className="shrink-0 font-display text-lg font-medium">{g === "gateway" ? "AI gateway" : "Doxxed Data API"}</div>
                   <code className="min-w-0 truncate font-mono text-xs text-subtle">{g === "gateway" ? `${origin}/api` : DATA}</code>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
@@ -648,7 +648,7 @@ print(res.choices[0].message.content)`,
             <H2>What to build</H2>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {[
-                ["Community bot", "Answers holder questions with live Doxed data — lock dates, fee claims, market cap."],
+                ["Community bot", "Answers holder questions with live Doxxed data — lock dates, fee claims, market cap."],
                 ["Trading & agent bots", "Read the market, explain moves, post updates — with tools and JSON output."],
                 ["Launch content", "Threads, announcements and changelogs drafted from your commits or roadmap."],
                 ["Holder support", "FAQ answers, scam-report triage, chat summaries for mods."],
@@ -689,7 +689,7 @@ print(res.choices[0].message.content)`,
                 ["400", "invalid_request_error", "Bad body, missing or disallowed model"],
                 ["401", "invalid_api_key", "Missing, wrong or revoked key"],
                 ["402", "insufficient_quota", "Monthly credit or key cap used up"],
-                ["403", "forbidden", "Not doxed, or account flagged"],
+                ["403", "forbidden", "Not doxxed, or account flagged"],
                 ["429", "rate_limited", "Too many requests — back off and retry"],
                 ["502", "upstream_error", "Model unavailable — retry or add fallbacks"],
               ].map(([s, c, d]) => (

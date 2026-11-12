@@ -42,7 +42,7 @@ export async function aiText(system: string, user: string, maxTokens = 1500): Pr
   if (!env.openrouterKey) throw new Error("AI is not configured");
   const res = await fetch(`${OR_BASE}/chat/completions`, {
     method: "POST",
-    headers: { "content-type": "application/json", authorization: `Bearer ${env.openrouterKey}`, "x-title": "Doxed Dev (internal)" },
+    headers: { "content-type": "application/json", authorization: `Bearer ${env.openrouterKey}`, "x-title": "Doxxed Dev (internal)" },
     body: JSON.stringify({ model, max_tokens: maxTokens, messages: [{ role: "system", content: system }, { role: "user", content: user }] }),
     signal: AbortSignal.timeout(90_000),
   });
@@ -115,7 +115,7 @@ If sources are thin, say so in watchouts. Reply with ONLY a JSON object:
  "recent": {"at": ISO date, "text": string}[] (up to 3 notable recent updates from the posts, newest first),
  "watchouts": string[] (0-3 honest caveats: unverified claims, missing code, concentration, etc.)}`;
   const user = `Token: ${input.name} ($${input.symbol})
-Dev identity on Doxed Dev: verified, disclosure level "${input.disclosure}".
+Dev identity on Doxxed Dev: verified, disclosure level "${input.disclosure}".
 Launch description: ${input.description ?? "—"}
 
 === WEBSITE (${input.website ?? "none"}) ===

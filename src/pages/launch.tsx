@@ -26,7 +26,7 @@ import { LAUNCHPADS } from "@/lib/mock";
 import { beginKyd, signAndSend, useKydStatus, useMe, useSignIn, waitForConfirmation } from "@/lib/session";
 import type { Disclosure, LaunchpadId } from "@/lib/types";
 
-const STEPS = ["Get doxed", "Launchpad", "Details", "Lock", "Launch"] as const;
+const STEPS = ["Get doxxed", "Launchpad", "Details", "Lock", "Launch"] as const;
 const IN_APP: LaunchpadId[] = ["pumpfun", "meteora"];
 
 type LaunchConfig = {
@@ -83,7 +83,7 @@ export function LaunchPage() {
   const [f, setF] = useState<Form>(initial);
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setF((p) => ({ ...p, [k]: v }));
   const { data: me } = useMe();
-  const doxed = me?.dev?.status === "approved";
+  const doxxed = me?.dev?.status === "approved";
 
   useEffect(() => {
     if (me?.dev) setF((p) => ({ ...p, alias: p.alias || me.dev!.alias, disclosure: me.dev!.disclosure }));
@@ -91,7 +91,7 @@ export function LaunchPage() {
 
   const blockers = useMemo(() => {
     const b: string[][] = [[], [], [], [], []];
-    if (!doxed) b[0].push("Finish the ID + face scan to continue.");
+    if (!doxxed) b[0].push("Finish the ID + face scan to continue.");
     if (!f.launchpad) b[1].push("Pick a launchpad.");
     if (f.launchpad === "meteora" && !f.taxBps) b[1].push("Pick your trading tax.");
     if (!f.image) b[2].push("Add a token image.");
@@ -101,7 +101,7 @@ export function LaunchPage() {
     if (!(Number(f.devBuy) >= 0.01)) b[2].push("Dev buy must be at least 0.01 SOL (it's what gets locked).");
     if (!f.agree.lock || !f.agree.accurate || !f.agree.conduct) b[3].push("Accept all three to continue.");
     return b;
-  }, [f, doxed]);
+  }, [f, doxxed]);
 
   const canNext = blockers[step].length === 0;
 
@@ -172,14 +172,14 @@ export function LaunchPage() {
           )}
         </div>
 
-        <Preview f={f} doxed={doxed} />
+        <Preview f={f} doxxed={doxxed} />
       </div>
     </div>
   );
 }
 
 // ------------------------------------------------------------------ preview
-function Preview({ f, doxed }: { f: Form; doxed: boolean }) {
+function Preview({ f, doxxed }: { f: Form; doxxed: boolean }) {
   return (
     <aside className="space-y-3 lg:sticky lg:top-28 lg:self-start">
       <div className="eyebrow">How holders will see it</div>
@@ -198,9 +198,9 @@ function Preview({ f, doxed }: { f: Form; doxed: boolean }) {
         <div className="mt-3 flex flex-wrap gap-1.5">
           {f.launchpad && <span className="chip border-border-strong text-muted-foreground">{LAUNCHPADS.find((l) => l.id === f.launchpad)?.name}</span>}
           {f.launchpad === "meteora" && f.taxBps && <span className="chip border-border-strong text-muted-foreground">Tax {f.taxBps / 100}%</span>}
-          {doxed && (
+          {doxxed && (
             <span className="chip border-foreground/40 bg-foreground/10 text-foreground">
-              <ShieldCheck className="h-3 w-3" /> DOXED · {DISCLOSURE[f.disclosure].short}
+              <ShieldCheck className="h-3 w-3" /> DOXXED · {DISCLOSURE[f.disclosure].short}
             </span>
           )}
           <span className="chip border-border-strong text-muted-foreground">
@@ -218,7 +218,7 @@ function Preview({ f, doxed }: { f: Form; doxed: boolean }) {
           <EyeOff className="h-3.5 w-3.5" /> Your privacy
         </div>
         <span className="font-prose">
-          Your ID and face scan are handled by our verification partner and never shown publicly. Holders see the Doxed badge plus
+          Your ID and face scan are handled by our verification partner and never shown publicly. Holders see the Doxxed badge plus
           only what you choose to reveal.
         </span>
       </div>
@@ -246,7 +246,7 @@ function StepTitle({ title, desc }: { title: string; desc: ReactNode }) {
   );
 }
 
-// ------------------------------------------------------------------ step 1: get doxed
+// ------------------------------------------------------------------ step 1: get doxxed
 function StepDoxed({ f, set }: StepProps) {
   const { data: me } = useMe();
   const signIn = useSignIn();
@@ -281,7 +281,7 @@ function StepDoxed({ f, set }: StepProps) {
 
   return (
     <div>
-      <StepTitle title="Get doxed (privately)" desc={`Two quick scans with your phone or laptop camera. ${APP_NAME} only ever shows holders the result.`} />
+      <StepTitle title="Get doxxed (privately)" desc={`Two quick scans with your phone or laptop camera. ${APP_NAME} only ever shows holders the result.`} />
 
       <ol className="grid gap-2 sm:grid-cols-3">
         {[
@@ -309,7 +309,7 @@ function StepDoxed({ f, set }: StepProps) {
         <div className="mt-5 flex items-center gap-3 rounded-lg border border-foreground/40 bg-foreground/5 p-4">
           <CheckCircle2 className="h-5 w-5" />
           <div>
-            <div className="font-medium">You're doxed as {me.dev?.alias}</div>
+            <div className="font-medium">You're doxxed as {me.dev?.alias}</div>
             <div className="text-xs text-subtle">Valid for all your future launches.</div>
           </div>
         </div>
@@ -630,7 +630,7 @@ function StepLock({ f, set }: StepProps) {
           [
             ["lock", `100% of my launch tokens are locked for ${f.months} months and can't be withdrawn early.`],
             ["accurate", "My links and details are accurate and I control them."],
-            ["conduct", `If I break ${APP_NAME}'s rules, my doxed profile is publicly flagged and I can't launch again.`],
+            ["conduct", `If I break ${APP_NAME}'s rules, my doxxed profile is publicly flagged and I can't launch again.`],
           ] as [keyof Form["agree"], string][]
         ).map(([k, l]) => (
           <label key={k} className={cn("flex cursor-pointer gap-3 rounded-lg border p-3 text-sm transition", f.agree[k] ? "border-foreground/50 bg-foreground/5" : "border-border hover:border-border-strong")}>
@@ -692,7 +692,7 @@ function StepLaunch({ f, goto }: { f: Form; goto: (n: number) => void }) {
       }
       if (from <= 3) {
         setAt(0);
-        say("$ doxed upload --image " + (f.image?.name ?? "token.png"));
+        say("$ doxxed upload --image " + (f.image?.name ?? "token.png"));
         const fd = new FormData();
         fd.append("image", f.image!);
         fd.append("launchpad", f.launchpad!);
@@ -705,7 +705,7 @@ function StepLaunch({ f, goto }: { f: Form; goto: (n: number) => void }) {
         say(`  metadata → ${meta.uri.slice(0, 48)}…`);
 
         setAt(1);
-        say(`$ doxed create $${f.symbol} --on ${f.launchpad} --dev-buy ${f.devBuy}${f.launchpad === "meteora" ? ` --tax ${f.taxBps! / 100}%` : ""}`);
+        say(`$ doxxed create $${f.symbol} --on ${f.launchpad} --dev-buy ${f.devBuy}${f.launchpad === "meteora" ? ` --tax ${f.taxBps! / 100}%` : ""}`);
         const built = await http<{ mint: string; tx: string }>("/launch/create-tx", {
           method: "POST",
           json: {
@@ -738,7 +738,7 @@ function StepLaunch({ f, goto }: { f: Form; goto: (n: number) => void }) {
       }
 
       setAt(4);
-      say(`$ doxed lock --all --months ${f.months}`);
+      say(`$ doxxed lock --all --months ${f.months}`);
       let lock: { tx: string; lockId: string };
       for (let i = 0; ; i++) {
         try {
@@ -786,7 +786,7 @@ function StepLaunch({ f, goto }: { f: Form; goto: (n: number) => void }) {
         </div>
         <h2 className="mt-4 font-display text-3xl font-semibold">${f.symbol} is live</h2>
         <p className="font-prose mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-          Created on {lp?.name}, 100% of your tokens locked for {f.months} months, and your Doxed badge is on the token page. The AI
+          Created on {lp?.name}, 100% of your tokens locked for {f.months} months, and your Doxxed badge is on the token page. The AI
           summary appears once it has read your links.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -794,7 +794,7 @@ function StepLaunch({ f, goto }: { f: Form; goto: (n: number) => void }) {
             View token page <ArrowRight className="h-3 w-3" />
           </Link>
           <a
-            href={`https://x.com/intent/post?text=${encodeURIComponent(`$${f.symbol} just launched on ${APP_NAME} — dev doxed, bag locked ${f.months} months.`)}`}
+            href={`https://x.com/intent/post?text=${encodeURIComponent(`$${f.symbol} just launched on ${APP_NAME} — dev doxxed, bag locked ${f.months} months.`)}`}
             target="_blank"
             rel="noreferrer"
             className="btn-ghost"

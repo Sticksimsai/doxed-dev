@@ -94,7 +94,7 @@ export function createWorkflow() {
   return didit<{ uuid?: string; workflow_id?: string; id?: string }>("/v3/workflows/", {
     method: "POST",
     body: JSON.stringify({
-      workflow_label: "Doxed Dev KYC",
+      workflow_label: "Doxxed Dev KYC",
       is_white_label_enabled: true,
       features: [
         // Order matters: the ID document (OCR) must come before face match.

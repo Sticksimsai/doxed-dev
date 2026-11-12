@@ -70,7 +70,7 @@ export function TokenPage() {
             <h1 className="font-display text-3xl font-semibold md:text-4xl">{t.name}</h1>
             <KydMark dev={dev} size={22} />
             <span className="rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">${t.symbol}</span>
-            <span className="rounded-[4px] border border-foreground/40 bg-foreground/10 px-1.5 py-0.5 text-xs text-foreground">DOXED · {DISCLOSURE[dev.disclosure].short}</span>
+            <span className="rounded-[4px] border border-foreground/40 bg-foreground/10 px-1.5 py-0.5 text-xs text-foreground">DOXXED · {DISCLOSURE[dev.disclosure].short}</span>
             <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
               <span className="h-1.5 w-1.5 bg-current" />
               {lp.name}
@@ -135,7 +135,7 @@ export function TokenPage() {
         <Kpi icon={<Droplets className="h-4 w-4" />} label="Liquidity" value={usd(t.liquidity)} />
         <Kpi icon={<Users className="h-4 w-4" />} label="Holders" value={int(t.holders)} />
         <a href="#dev" className="contents">
-          <Kpi variant="cyber" icon={<ShieldCheck className="h-5 w-5" />} label="Dev doxed" value={DISCLOSURE[dev.disclosure].short} sub={`checked ${ago(dev.verifiedAt)} ago`} />
+          <Kpi variant="cyber" icon={<ShieldCheck className="h-5 w-5" />} label="Dev doxxed" value={DISCLOSURE[dev.disclosure].short} sub={`checked ${ago(dev.verifiedAt)} ago`} />
         </a>
         <a href="#fees" className="contents">
           <Kpi variant="cyber" icon={<Coins className="h-5 w-5" />} label="Fees claimed" value={`${claimed.toFixed(2)} SOL`} sub={`${t.feeClaims.length} claims`} />
@@ -213,7 +213,7 @@ function AiSummaryCard({ t }: { t: Token }) {
     return (
       <SectionCard title="AI live summary" subtitle="What this project is, read from its X, website and GitHub" icon={<Zap />}>
         <div className="font-mono text-[13px] text-muted-foreground">
-          <span className="text-subtle">$ </span>doxed summarise {t.symbol.toLowerCase()} — reading sources
+          <span className="text-subtle">$ </span>doxxed summarise {t.symbol.toLowerCase()} — reading sources
           <Cursor />
         </div>
         <p className="font-prose mt-2 text-xs text-subtle">The first summary appears a few minutes after launch, then refreshes regularly.</p>
@@ -346,7 +346,7 @@ function RepoCard({ t }: { t: Token }) {
       </div>
 
       <div className="scanline mt-4 rounded-md border border-border bg-black/50 p-3 font-mono text-[12.5px] leading-relaxed">
-        <div className="text-subtle">$ doxed scan {r.repo}</div>
+        <div className="text-subtle">$ doxxed scan {r.repo}</div>
         {r.findings.map((f) => (
           <div key={f.label} className="mt-1.5">
             <span className={cn("mr-2", f.status === "good" ? "text-success" : f.status === "warn" ? "text-foreground" : "text-danger")}>
@@ -385,7 +385,7 @@ function DevCard({ dev }: { dev: Dev }) {
     ["screening", "Sanctions screening"],
   ];
   return (
-    <SectionCard id="dev" className="scroll-mt-20" title="Doxed dev" subtitle="Identity verified privately by us" icon={<BadgeCheck />}>
+    <SectionCard id="dev" className="scroll-mt-20" title="Doxxed dev" subtitle="Identity verified privately by us" icon={<BadgeCheck />}>
       <div className="flex items-center justify-between gap-2">
         <div>
           <Link to="/dev/$id" params={{ id: dev.id }} className="font-display text-lg font-semibold hover:text-primary">

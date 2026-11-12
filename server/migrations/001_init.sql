@@ -1,4 +1,4 @@
--- Doxed Dev core schema.
+-- Doxxed Dev core schema.
 -- Rule: raw identity data lives ONLY in dev_kyc_private and is never selected by public routes.
 -- Public reads go through the dev_public_profiles view, which applies the dev's disclosure choices.
 

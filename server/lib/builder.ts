@@ -1,4 +1,4 @@
-// Builder API — every doxed dev gets their own keys into the platform's master OpenRouter key.
+// Builder API — every doxxed dev gets their own keys into the platform's master OpenRouter key.
 //   Dev → https://<host>/api/v1/chat/completions (Bearer dxd_…) → OpenRouter (master key)
 // Keys are stored only as SHA-256 hashes. Every call is metered from OpenRouter's own usage.cost,
 // and checked against the dev's monthly credit, a per-key cap and a per-key rate limit.
@@ -78,7 +78,7 @@ async function authKey(raw: string): Promise<KeyAuth | null> {
         keyLimit: r.monthly_limit_usd != null ? Number(r.monthly_limit_usd) : null,
         credit: r.builder_credit_usd != null ? Number(r.builder_credit_usd) : env.builderCreditUsd,
         ok: r.status === "approved" && !r.flagged,
-        reason: r.flagged ? "This dev account is flagged." : r.status !== "approved" ? "Get doxed to use the Builder API." : undefined,
+        reason: r.flagged ? "This dev account is flagged." : r.status !== "approved" ? "Get doxxed to use the Builder API." : undefined,
       }
     : null;
   authCache.set(h, { at: Date.now(), v });
@@ -159,9 +159,9 @@ async function generationCost(id: string) {
 }
 
 // ------------------------------------------------------------------ white-label
-// Responses are rewritten so builders only ever see Doxed: our own ids, no upstream provider
+// Responses are rewritten so builders only ever see Doxxed: our own ids, no upstream provider
 // fields, no upstream names in errors or stream keep-alives.
-const scrub = (t: string) => t.replace(/open\s?router(\.ai)?/gi, "Doxed");
+const scrub = (t: string) => t.replace(/open\s?router(\.ai)?/gi, "Doxxed");
 const mapId = (id: unknown) => (typeof id === "string" ? `dxd-${id.replace(/^gen-/, "")}` : id);
 function clean(j: any) {
   if (!j || typeof j !== "object") return j;
@@ -183,7 +183,7 @@ const upstreamHeaders = () => ({
   authorization: `Bearer ${env.openrouterKey}`,
   "content-type": "application/json",
   "HTTP-Referer": env.publicUrl,
-  "X-Title": "Doxed Dev",
+  "X-Title": "Doxxed Dev",
 });
 
 export async function chatCompletions(c: Context) {

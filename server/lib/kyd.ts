@@ -1,4 +1,4 @@
-// Getting doxed: profile + verification lifecycle.
+// Getting doxxed: profile + verification lifecycle.
 //   pending → in_progress (Didit session open) → approved | rejected | review (admin decides)
 // Raw identity fields only ever land in dev_kyc_private; the public view never selects them.
 import { randomUUID } from "node:crypto";

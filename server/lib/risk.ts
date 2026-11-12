@@ -1,4 +1,4 @@
-// Decision engine for getting doxed.
+// Decision engine for getting doxxed.
 //  1. Hard rules on Didit's result (document authenticity, liveness, face match, age, expiry).
 //  2. Duplicate-ID guard: one identity document → one dev.
 //  3. AI risk check: a model reviews the structured fraud signals (never images or document numbers)
@@ -76,7 +76,7 @@ export async function evaluate(d: DiditDecision, isDuplicate: (hash: string) => 
   if (age != null && age < 18) reject.push("You must be 18 or older to launch.");
   if (expired) reject.push("The ID document has expired.");
   if (!hash) review.push("No document number was read from the ID.");
-  if (hash && (await isDuplicate(hash))) reject.push("This ID is already linked to another Doxed Dev account.");
+  if (hash && (await isDuplicate(hash))) reject.push("This ID is already linked to another Doxxed Dev account.");
   if (highRisk.length) review.push(`High-risk signals: ${highRisk.map((w) => w.short_description).filter(Boolean).join("; ")}`);
 
   let outcome: Outcome = reject.length ? "rejected" : review.length ? "review" : "approved";

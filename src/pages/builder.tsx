@@ -43,7 +43,7 @@ export function BuilderPage() {
   const { data: me } = useMe();
   const signIn = useSignIn();
   const qc = useQueryClient();
-  const doxed = me?.dev?.status === "approved";
+  const doxxed = me?.dev?.status === "approved";
   const base = `${!USE_MOCK && typeof location !== "undefined" && location.protocol.startsWith("http") ? location.origin : SITE_URL}/api/v1`;
 
   const { data: cfg } = useQuery({
@@ -53,12 +53,12 @@ export function BuilderPage() {
   const { data: keys } = useQuery({
     queryKey: ["builder-keys"],
     queryFn: () => (USE_MOCK ? Promise.resolve(mockKeys) : http<Key[]>("/builder/keys")),
-    enabled: doxed,
+    enabled: doxxed,
   });
   const { data: usage } = useQuery({
     queryKey: ["builder-usage"],
     queryFn: () => (USE_MOCK ? Promise.resolve(mockUsage) : http<Usage>("/builder/usage")),
-    enabled: doxed,
+    enabled: doxxed,
     refetchInterval: 30_000,
   });
 
@@ -105,7 +105,7 @@ export function BuilderPage() {
         <div className="relative grid gap-6 md:grid-cols-[1.2fr_1fr] md:items-center">
           <div>
             <div className="inline-flex items-center gap-2 rounded-[4px] border border-border-strong px-2 py-1 font-pixel text-[10px] uppercase text-muted-foreground">
-              <Code2 className="h-3 w-3" /> Builder API · doxed devs only
+              <Code2 className="h-3 w-3" /> Builder API · doxxed devs only
             </div>
             <h1 className="mt-4 font-display text-4xl font-semibold leading-[1.05] md:text-5xl">
               <Scramble text="Build with any model." />
@@ -115,7 +115,7 @@ export function BuilderPage() {
               </span>
             </h1>
             <p className="font-prose mt-4 max-w-lg text-[15px] leading-relaxed text-muted-foreground">
-              Every doxed dev gets API keys to hundreds of AI models — GPT, Claude, Gemini, Llama and more — through one
+              Every doxxed dev gets API keys to hundreds of AI models — GPT, Claude, Gemini, Llama and more — through one
               OpenAI-compatible endpoint, with <span className="text-foreground">${(cfg?.creditUsd ?? 100).toFixed(0)} of free compute every month</span>.
               Ship your bot, agent or app without setting up billing anywhere.
             </p>
@@ -147,10 +147,10 @@ export function BuilderPage() {
             {signIn.isPending ? "Waiting for wallet…" : "Connect wallet"}
           </button>
         </Gate>
-      ) : !doxed ? (
-        <Gate text={`API keys are for doxed devs. Scan your ID once (about 2 minutes) and you're in — it also lets you launch on ${APP_NAME}.`}>
+      ) : !doxxed ? (
+        <Gate text={`API keys are for doxxed devs. Scan your ID once (about 2 minutes) and you're in — it also lets you launch on ${APP_NAME}.`}>
           <Link to="/launch" className="btn-primary">
-            Get doxed
+            Get doxxed
           </Link>
         </Gate>
       ) : (
@@ -328,7 +328,7 @@ function QuickStart({ base }: { base: string }) {
     js: `import OpenAI from "openai";
 
 const ai = new OpenAI({
-  apiKey: process.env.DOXED_API_KEY,   // dxd_…
+  apiKey: process.env.DOXXED_API_KEY,   // dxd_…
   baseURL: "${base}",
 });
 
@@ -341,7 +341,7 @@ console.log(res.choices[0].message.content);`,
 import os
 
 ai = OpenAI(
-    api_key=os.environ["DOXED_API_KEY"],  # dxd_…
+    api_key=os.environ["DOXXED_API_KEY"],  # dxd_…
     base_url="${base}",
 )
 
@@ -351,7 +351,7 @@ res = ai.chat.completions.create(
 )
 print(res.choices[0].message.content)`,
     curl: `curl ${base}/chat/completions \\
-  -H "Authorization: Bearer $DOXED_API_KEY" \\
+  -H "Authorization: Bearer $DOXXED_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{"model":"openai/gpt-5-mini","messages":[{"role":"user","content":"gm"}],"stream":true}'
 

@@ -65,17 +65,17 @@ export function Typewriter({ text, speed = 12, className }: { text: string; spee
 
 type Line = { t: "cmd" | "ok" | "info" | "dim"; s: string };
 const SCRIPT: Line[] = [
-  { t: "cmd", s: "doxed verify --wallet 7xKp…9fQa" },
+  { t: "cmd", s: "doxxed verify --wallet 7xKp…9fQa" },
   { t: "info", s: "→ id document ............ matched" },
   { t: "info", s: "→ liveness ............... passed" },
   { t: "info", s: "→ sanctions screen ....... clear" },
-  { t: "ok", s: "✓ dev doxed (private) · details redacted" },
-  { t: "cmd", s: "doxed launch $ORBIT --on meteora --dev-buy 2" },
+  { t: "ok", s: "✓ dev doxxed (private) · details redacted" },
+  { t: "cmd", s: "doxxed launch $ORBIT --on meteora --dev-buy 2" },
   { t: "info", s: "→ mint created ........... dyXg…jiBP" },
   { t: "info", s: "→ dev buy ................ 41,000,000 ORBIT" },
-  { t: "cmd", s: "doxed lock --all --months 12" },
+  { t: "cmd", s: "doxxed lock --all --months 12" },
   { t: "ok", s: "✓ 100% of dev tokens locked until Oct 2027" },
-  { t: "dim", s: "listed on doxed.dev/discover" },
+  { t: "dim", s: "listed on doxxed.app" },
 ];
 
 /** Looping terminal that types out the verify → launch → lock flow. */
@@ -122,7 +122,7 @@ export function TerminalDemo({ className }: { className?: string }) {
         <span className="h-2 w-2 bg-white/25" />
         <span className="h-2 w-2 bg-white/25" />
         <span className="h-2 w-2 bg-white/25" />
-        <span className="ml-2 font-pixel text-[10px] text-subtle">~/doxed — zsh</span>
+        <span className="ml-2 font-pixel text-[10px] text-subtle">~/doxxed — zsh</span>
       </div>
       <div ref={box} className="h-[248px] overflow-hidden px-4 py-3 font-mono text-[12.5px] leading-[1.75]">
         {lines.map((l, i) => (
@@ -149,13 +149,13 @@ export function TerminalDemo({ className }: { className?: string }) {
 
 const EVENTS = [
   "LOCK_CREATED  ORBIT  41.0M → locked · 12mo",
-  "DEV_DOXED     anon-K9m · private",
+  "DEV_DOXXED     anon-K9m · private",
   "FEE_CLAIM     PAWS   2.34 SOL",
   "LAUNCH        SHIFT  pump.fun",
   "GRADUATED     HRBR   → meteora damm",
   "AI_SUMMARY    LGRL   refreshed",
   "REPO_SCAN     ORBIT  86/100",
-  "DEV_DOXED     kitsune.dev · socials",
+  "DEV_DOXXED     kitsune.dev · socials",
   "FEE_CLAIM     ORBIT  6.89 SOL",
 ];
 

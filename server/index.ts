@@ -1,4 +1,4 @@
-// Doxed Dev API + static frontend, one Node process.
+// Doxxed Dev API + static frontend, one Node process.
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { serveStatic } from "@hono/node-server/serve-static";
@@ -86,12 +86,12 @@ api.post("/auth/nonce", limit(20, 60_000), async (c) => {
   const body = z.object({ wallet: wallet58 }).safeParse(await c.req.json().catch(() => ({})));
   if (!body.success) return c.json({ error: "Invalid wallet" }, 400);
   const nonce = await createNonce(body.data.wallet);
-  return c.json({ nonce, message: signInMessage(body.data.wallet, nonce, c.req.header("host") ?? "doxed.dev") });
+  return c.json({ nonce, message: signInMessage(body.data.wallet, nonce, c.req.header("host") ?? "doxxed.app") });
 });
 api.post("/auth/verify", limit(20, 60_000), async (c) => {
   const body = z.object({ wallet: wallet58, nonce: z.string(), signature: z.string() }).safeParse(await c.req.json().catch(() => ({})));
   if (!body.success) return c.json({ error: "Invalid request" }, 400);
-  const ok = await verifySignIn(body.data.wallet, body.data.nonce, body.data.signature, c.req.header("host") ?? "doxed.dev");
+  const ok = await verifySignIn(body.data.wallet, body.data.nonce, body.data.signature, c.req.header("host") ?? "doxxed.app");
   if (!ok) return c.json({ error: "Signature check failed — try again." }, 401);
   await startSession(c, body.data.wallet);
   return c.json({ wallet: body.data.wallet });
@@ -112,7 +112,7 @@ api.get("/me", async (c) => {
   });
 });
 
-// ------------------------------------------------------------------ getting doxed
+// ------------------------------------------------------------------ getting doxxed
 api.post("/kyd/start", limit(10, 60_000), requireWallet, async (c) => {
   const body = z
     .object({
@@ -229,7 +229,7 @@ api.patch("/me/profile", requireWallet, async (c) => {
 const requireDoxed = async (c: any, next: any) => {
   const [d] = await sql`select p.dev_id from dev_profiles p join dev_kyc_private k using (dev_id)
                         where p.wallet = ${c.get("wallet")} and k.status = 'approved' and not p.flagged`;
-  if (!d) return c.json({ error: "Get doxed before launching." }, 403);
+  if (!d) return c.json({ error: "Get doxxed before launching." }, 403);
   c.set("devId", d.dev_id);
   await next();
 };
@@ -373,7 +373,7 @@ api.post("/launches", limit(10, 60_000), requireWallet, async (c) => {
   const b = parsed.data;
   const [dev] = await sql`select p.dev_id from dev_profiles p join dev_kyc_private k using (dev_id)
                           where p.wallet = ${c.get("wallet")} and k.status = 'approved' and not p.flagged`;
-  if (!dev) return c.json({ error: "Get doxed before launching." }, 403);
+  if (!dev) return c.json({ error: "Get doxxed before launching." }, 403);
   if ((await tokenSupply(b.mint)) == null) return c.json({ error: "That mint doesn't exist on Solana mainnet yet." }, 400);
   try {
     await sql`
@@ -411,7 +411,7 @@ api.post("/v1/chat/completions", chatCompletions);
 api.get("/v1/models", models);
 api.get("/v1/key", keyInfo);
 
-// Key management (signed-in, doxed devs)
+// Key management (signed-in, doxxed devs)
 api.get("/builder/config", (c) =>
   c.json({ enabled: !!env.openrouterKey, creditUsd: env.builderCreditUsd, rpm: env.builderRpm, maxKeys: env.builderMaxKeys, models: env.builderModels }),
 );
@@ -459,4 +459,4 @@ await bootstrapIntegrations();
 }
 if (env.seedDemo) await seedDemo();
 startJobs();
-serve({ fetch: app.fetch, port: env.port }, (i) => console.log(`[doxed] listening on :${i.port}`));
+serve({ fetch: app.fetch, port: env.port }, (i) => console.log(`[doxxed] listening on :${i.port}`));
